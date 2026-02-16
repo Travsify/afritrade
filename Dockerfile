@@ -34,7 +34,7 @@ RUN composer install --no-dev --optimize-autoloader
 FROM php:8.2-fpm
 
 # Install nginx and PostgreSQL client extensions
-RUN apt-get update && apt-get install -y nginx libpq-dev && \
+RUN apt-get update && apt-get install -y nginx libpq-dev procps && \
     docker-php-ext-install pdo_pgsql && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -50,8 +50,14 @@ COPY nginx.conf /etc/nginx/sites-available/default
 # Set permissions
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
+# Create a test file to verify PHP is working
+RUN echo "<?php phpinfo(); ?>" > /var/www/public/test-php.php
+
 # Expose port
 EXPOSE 80
 
-# Start Nginx and PHP-FPM
-CMD service nginx start && php-fpm
+# Use a shell script to start processes and handle logs
+RUN echo "#!/bin/sh\nphp-fpm -D\nnginx -g 'daemon off;'" > /start.sh
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]
