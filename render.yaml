@@ -14,7 +14,9 @@ services:
           name: afritrad-db
           property: connectionString
       - key: APP_KEY
-        generateValue: true
+        value: base64:uXKB0w8Ce1VPMDOPqIv/j/864HJNxTy/JB2Tkm29Cio=
+      - key: APP_URL
+        value: https://afritrade.onrender.com
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
