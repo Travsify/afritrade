@@ -44,11 +44,14 @@ WORKDIR /var/www
 # Copy files from builder stage
 COPY --from=backend-builder /var/www /var/www
 
-# Copy Nginx configuration
-COPY nginx.conf /etc/nginx/sites-available/default
+# Copy Nginx configuration - put it in conf.d for simplicity
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Remove the default Debian Nginx config if it exists
+RUN rm -f /etc/nginx/sites-enabled/default
+
+# Set permissions for everything
+RUN chown -R www-data:www-data /var/www
 
 # Create a test file to verify PHP is working
 RUN echo "<?php phpinfo(); ?>" > /var/www/public/test-php.php
@@ -56,8 +59,8 @@ RUN echo "<?php phpinfo(); ?>" > /var/www/public/test-php.php
 # Expose port
 EXPOSE 80
 
-# Use a shell script to start processes and handle logs
-RUN echo "#!/bin/sh\nphp-fpm -D\nnginx -g 'daemon off;'" > /start.sh
+# Improved startup script with diagnostics
+RUN echo "#!/bin/sh\necho \"--- File Structure ---\"\nls -R /var/www/public | head -n 20\necho \"--- Starting Services ---\"\nphp-fpm -D\nnginx -g 'daemon off;'" > /start.sh
 RUN chmod +x /start.sh
 
 CMD ["/start.sh"]
