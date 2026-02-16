@@ -44,23 +44,23 @@ WORKDIR /var/www
 # Copy files from builder stage
 COPY --from=backend-builder /var/www /var/www
 
-# Copy Nginx configuration - put it in conf.d for simplicity
+# Copy Nginx configuration - ensure it's the ONLY one
+RUN rm -rf /etc/nginx/conf.d/*
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Remove the default Debian Nginx config if it exists
 RUN rm -f /etc/nginx/sites-enabled/default
 
 # Set permissions for everything
-RUN chown -R www-data:www-data /var/www
+RUN chown -R www-data:www-data /var/www && \
+    chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # Create a test file to verify PHP is working
-RUN echo "<?php phpinfo(); ?>" > /var/www/public/test-php.php
+RUN echo "<?php echo 'PHP is working. Path: ' . \$_SERVER['SCRIPT_FILENAME']; phpinfo(); ?>" > /var/www/public/test-php.php
 
 # Expose port
 EXPOSE 80
 
 # Improved startup script with diagnostics
-RUN echo "#!/bin/sh\necho \"--- File Structure ---\"\nls -R /var/www/public | head -n 20\necho \"--- Starting Services ---\"\nphp-fpm -D\nnginx -g 'daemon off;'" > /start.sh
+RUN echo "#!/bin/sh\necho \"--- DIAGNOSTICS ---\"\necho \"Current User: \$(whoami)\"\necho \"PHP-FPM Version: \$(php-fpm -v | head -n 1)\"\necho \"Directory listing for /var/www/public:\"\nls -la /var/www/public\necho \"-------------------\"\nphp-fpm -D\nnginx -g 'daemon off;'" > /start.sh
 RUN chmod +x /start.sh
 
 CMD ["/start.sh"]
