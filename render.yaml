@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: afritrad-backend
+    env: php
+    buildCommand: |
+      cd backend_laravel
+      composer install --no-dev --optimize-autoloader
+      php artisan optimize
+    startCommand: |
+      cd backend_laravel
+      php artisan serve --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: afritrad-db
+          property: connectionString
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: LOG_CHANNEL
+        value: errorlog
+
+databases:
+  - name: afritrad-db
+    databaseName: afritrad
+    user: afritrad_user
