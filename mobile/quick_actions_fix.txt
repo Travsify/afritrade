@@ -1,0 +1,8 @@
+    final quickActions = [
+      {'icon': Iconsax.convert_card, 'label': 'Swap Currency', 'color': Colors.orange, 'page': SwapScreen()},
+      {'icon': Iconsax.export_1, 'label': 'Send Money', 'color': Colors.blue, 'page': PaySupplierScreen()},
+      {'icon': Iconsax.import, 'label': 'Receive Money', 'color': Colors.green, 'page': FundWalletScreen()},
+      {'icon': Iconsax.card_add, 'label': 'Virtual Cards', 'color': Colors.purple, 'page': VirtualCardsScreen()},
+      {'icon': Iconsax.bank, 'label': 'Virtual Accounts', 'color': Colors.teal, 'page': VirtualAccountsScreen()},
+      {'icon': Iconsax.calculator, 'label': 'Calculator', 'color': Colors.amber, 'page': BusinessCalculatorScreen()},
+    ];
