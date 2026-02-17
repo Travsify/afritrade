@@ -1,6 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../auth/presentation/pages/login_screen.dart';
 
@@ -17,64 +18,54 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingData> _pages = [
     OnboardingData(
-      title: 'The Challenge',
-      subtitle: 'We understand your struggle',
+      title: 'Global\nAccounts',
+      subtitle: 'BANKING WITHOUT BOUNDARIES',
       description:
-          'Paying international suppliers is hard for African businesses. High fees, slow transfers, and currency volatility create barriers to growth.',
+          'Open high-limit USD, EUR, and GBP accounts in minutes. Fund locally and trade globally.',
       imagePath: 'assets/images/onboarding_challenge.png',
-      gradientColors: [
-        const Color(0xFF0F172A),
-        const Color(0xFF1E3A5F),
-      ],
-      accentColor: const Color(0xFFF59E0B),
+      icon: '🌍',
+      gradientColors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
+      accentColor: Color(0xFF2DD4BF),
     ),
     OnboardingData(
-      title: 'Our Solution',
-      subtitle: 'Bridging the gap',
+      title: 'Supplier\nPayments',
+      subtitle: 'CHINA & AFRICA FOCUS',
       description:
-          'Afritrade connects African businesses to global markets using stablecoin technology. Fast, secure, and transparent payments.',
+          'Pay suppliers in China, Dubai, and across Africa instantly. Transparent rates, zero hidden fees.',
       imagePath: 'assets/images/onboarding_bridge.png',
-      gradientColors: [
-        const Color(0xFF0F172A),
-        const Color(0xFF064E3B),
-      ],
-      accentColor: const Color(0xFF10B981),
+      icon: '🚢',
+      gradientColors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
+      accentColor: Color(0xFF2DD4BF),
     ),
     OnboardingData(
-      title: 'Fund Locally',
-      subtitle: 'Pay in your currency',
+      title: 'Virtual\nCards',
+      subtitle: 'CORPORATE SPENDING',
       description:
-          'Fund your wallet in Naira, Cedis, Shillings, or any local currency. We handle the conversion seamlessly.',
+          'Issue unlimited dollar virtual cards for your team\'s global subscriptions and ad spend.',
       imagePath: 'assets/images/onboarding_local.png',
-      gradientColors: [
-        const Color(0xFF0F172A),
-        const Color(0xFF1E3A5F),
-      ],
-      accentColor: const Color(0xFF3B82F6),
+      icon: '💳',
+      gradientColors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
+      accentColor: Color(0xFF2DD4BF),
     ),
     OnboardingData(
-      title: 'Global Reach',
-      subtitle: 'Pay suppliers worldwide',
+      title: 'Instant\nKYB',
+      subtitle: 'VERIFIED IN SECONDS',
       description:
-          'Send payments to China, India, UAE, Europe, and beyond in minutes. No more waiting days for transfers.',
+          'Automated business verification using Identity Pass. No paperwork, just fast onboarding.',
       imagePath: 'assets/images/onboarding_global.png',
-      gradientColors: [
-        const Color(0xFF0F172A),
-        const Color(0xFF134E4A),
-      ],
-      accentColor: const Color(0xFF10B981),
+      icon: '🛡️',
+      gradientColors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
+      accentColor: Color(0xFF2DD4BF),
     ),
     OnboardingData(
-      title: 'Start Your Journey',
-      subtitle: 'Join the revolution',
+      title: 'Scale Your\nBusiness',
+      subtitle: 'JOIN THE REVOLUTION',
       description:
-          'Join thousands of African traders growing their businesses globally. Your success story starts here.',
+          'Join thousands of African entrepreneurs growing their trade across the globe.',
       imagePath: 'assets/images/onboarding_success.png',
-      gradientColors: [
-        const Color(0xFF0F172A),
-        const Color(0xFF1E293B),
-      ],
-      accentColor: const Color(0xFFF59E0B),
+      icon: '🚀',
+      gradientColors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
+      accentColor: Color(0xFF2DD4BF),
     ),
   ];
 
@@ -106,11 +97,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   if (_currentPage < _pages.length - 1)
                     GestureDetector(
-                      onTap: () {
-                        _controller.animateToPage(
-                          _pages.length - 1,
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.easeInOut,
+                      onTap: () async {
+                        // Mark onboarding as completed
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('isFirstTime', false);
+
+                        Navigator.pushReplacement(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation,
+                                    secondaryAnimation) =>
+                                const LoginScreen(),
+                            transitionsBuilder: (context, animation,
+                                    secondaryAnimation, child) {
+                              return FadeTransition(
+                                  opacity: animation, child: child);
+                            },
+                            transitionDuration:
+                                const Duration(milliseconds: 500),
+                          ),
                         );
                       },
                       child: Container(
@@ -118,13 +123,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withOpacity(0.15),
                         ),
                         child: Text(
                           'Skip',
                           style: GoogleFonts.outfit(
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -136,57 +142,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           // Bottom Navigation
           Positioned(
-            bottom: 50,
+            bottom: 40,
             left: 0,
             right: 0,
             child: Column(
               children: [
-                // Page Indicator with story progress
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_pages.length, (index) {
-                      final isActive = index == _currentPage;
-                      final isPast = index < _currentPage;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        height: 6,
-                        width: isActive ? 32 : 12,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(3),
-                          color: isActive
-                              ? _pages[_currentPage].accentColor
-                              : isPast
-                                  ? _pages[index]
-                                      .accentColor
-                                      .withOpacity(0.5)
-                                  : Colors.white24,
-                        ),
-                      );
-                    }),
-                  ),
+                // Page Indicator
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_pages.length, (index) {
+                    final isActive = index == _currentPage;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      height: 6,
+                      width: isActive ? 24 : 6,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(3),
+                        color: isActive
+                            ? _pages[_currentPage].accentColor
+                            : Colors.grey.withOpacity(0.3),
+                      ),
+                    );
+                  }),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 32),
 
                 // Navigation Button
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: GestureDetector(
                     onTap: () {
                       if (_currentPage == _pages.length - 1) {
-                        // Navigate to Login
+                        // Mark onboarding as completed
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('isFirstTime', false);
+
                         Navigator.pushReplacement(
                           context,
                           PageRouteBuilder(
-                            pageBuilder:
-                                (context, animation, secondaryAnimation) =>
-                                    const LoginScreen(),
+                            pageBuilder: (context, animation,
+                                    secondaryAnimation) =>
+                                const LoginScreen(),
                             transitionsBuilder: (context, animation,
-                                secondaryAnimation, child) {
+                                    secondaryAnimation, child) {
                               return FadeTransition(
                                   opacity: animation, child: child);
                             },
@@ -201,25 +201,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         );
                       }
                     },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
+                    child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: LinearGradient(
-                          colors: [
-                            _pages[_currentPage].accentColor,
-                            _pages[_currentPage].accentColor.withOpacity(0.8),
-                          ],
-                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        color: _pages[_currentPage].accentColor,
                         boxShadow: [
                           BoxShadow(
                             color: _pages[_currentPage]
                                 .accentColor
-                                .withOpacity(0.4),
+                                .withOpacity(0.3),
                             blurRadius: 20,
-                            offset: const Offset(0, 10),
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
@@ -232,7 +226,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
@@ -253,6 +247,7 @@ class OnboardingData {
   final String subtitle;
   final String description;
   final String imagePath;
+  final String icon;
   final List<Color> gradientColors;
   final Color accentColor;
 
@@ -261,6 +256,7 @@ class OnboardingData {
     required this.subtitle,
     required this.description,
     required this.imagePath,
+    required this.icon,
     required this.gradientColors,
     required this.accentColor,
   });
@@ -274,117 +270,152 @@ class OnboardingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: data.gradientColors,
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: Column(
-            children: [
-              const SizedBox(height: 60),
-
-              // Illustration
-              Expanded(
-                flex: 5,
-                child: FadeInDown(
-                  duration: const Duration(milliseconds: 600),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: data.accentColor.withOpacity(0.2),
-                          blurRadius: 40,
-                          spreadRadius: 10,
-                        ),
+      color: const Color(0xFF4F46E5), // Indigo background base
+      child: Stack(
+        children: [
+          // Background Image with Gradient Overlay
+          Positioned.fill(
+            bottom: MediaQuery.of(context).size.height * 0.4,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.asset(
+                    data.imagePath,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color(0xFF4F46E5).withOpacity(0.8),
+                        const Color(0xFF4F46E5).withOpacity(0.95),
                       ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: Image.asset(
-                        data.imagePath,
-                        fit: BoxFit.contain,
-                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
+            ),
+          ),
 
-              const SizedBox(height: 40),
-
-              // Text Content
-              Expanded(
-                flex: 3,
-                child: Column(
-                  children: [
-                    // Subtitle
-                    FadeInUp(
-                      delay: const Duration(milliseconds: 200),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 6),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: data.accentColor.withOpacity(0.15),
-                        ),
-                        child: Text(
-                          data.subtitle.toUpperCase(),
-                          style: GoogleFonts.outfit(
-                            color: data.accentColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Title
-                    FadeInUp(
-                      delay: const Duration(milliseconds: 300),
-                      child: Text(
-                        data.title,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          height: 1.2,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Description
-                    FadeInUp(
-                      delay: const Duration(milliseconds: 400),
-                      child: Text(
-                        data.description,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(
-                          color: Colors.white70,
-                          fontSize: 16,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
+          // White Shape at bottom
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(60),
                 ),
               ),
-
-              // Space for navigation
-              const SizedBox(height: 120),
-            ],
+            ),
           ),
-        ),
+
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 30),
+
+                  // Icon Box
+                  FadeInDown(
+                    duration: const Duration(milliseconds: 600),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: Colors.white.withOpacity(0.5), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 25,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          data.icon,
+                          style: const TextStyle(fontSize: 36),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  // Title
+                  FadeInLeft(
+                    delay: const Duration(milliseconds: 200),
+                    child: Text(
+                      data.title,
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 44,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // Subtitle
+                  FadeInLeft(
+                    delay: const Duration(milliseconds: 300),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: data.accentColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        data.subtitle,
+                        style: GoogleFonts.outfit(
+                          color: data.accentColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Description (inside the white area)
+                  FadeInUp(
+                    delay: const Duration(milliseconds: 450),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 150),
+                      child: Text(
+                        data.description,
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF1F2937),
+                          fontSize: 18,
+                          height: 1.6,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

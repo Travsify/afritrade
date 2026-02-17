@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afritrad | Onboarding Visual Prototypes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0b0e14; color: white; -webkit-font-smoothing: antialiased; }
+        .font-outfit { font-family: 'Outfit', sans-serif; }
+        
+        .mockup-container { 
+            position: relative; 
+            width: 320px; 
+            height: 650px; 
+            border-radius: 40px; 
+            border: 10px solid #1a1f26; 
+            overflow: hidden; 
+            background: #fff;
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);
+        }
+        
+        /* Variation 1: Minimalist */
+        .v1-bg { background: radial-gradient(circle at 100% 0%, #f0f7ff 0%, #ffffff 50%); }
+        .v1-primary { background: #4f46e5; }
+        
+        /* Variation 2: Premium Dark */
+        .v2-bg { background: #0b0e14; }
+        .v2-glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .v2-gradient-text { background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Variation 3: Vibrant */
+        .v3-bg { background: #4f46e5; }
+        .v3-bottom { background: #ffffff; border-radius: 60px 60px 0 0; }
+
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        .btn-glow { box-shadow: 0 0 20px rgba(79, 70, 229, 0.4); }
+    </style>
+</head>
+<body class="p-10">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-16">
+            <h1 class="text-5xl font-outfit font-extrabold mb-4 v2-gradient-text">Visual Design Concepts</h1>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto">I've built these high-fidelity visual mockups to show you how the Afritrad onboarding will look. Choose the style that fits your vision.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-16 justify-items-center">
+            
+            <!-- OPTION 1 -->
+            <div class="flex flex-col items-center">
+                <div class="mb-6 text-center">
+                    <span class="px-3 py-1 bg-blue-900/40 text-blue-400 rounded-full text-xs font-bold uppercase tracking-widest">Option 1</span>
+                    <h2 class="text-2xl font-outfit font-bold mt-2">Minimalist & Clean</h2>
+                </div>
+                <div class="mockup-container v1-bg text-gray-900">
+                    <div class="h-3 w-32 bg-gray-200 mx-auto rounded-b-xl mb-12"></div>
+                    <div class="px-8 h-full flex flex-col justify-center text-center">
+                        <div class="w-24 h-24 bg-blue-50 rounded-3xl mx-auto flex items-center justify-center text-4xl mb-8 border border-blue-100 animate-float">🌍</div>
+                        <h3 class="text-3xl font-outfit font-bold mb-4">Global Business Accounts</h3>
+                        <p class="text-gray-500 leading-relaxed mb-10">Open USD, EUR, and GBP accounts in minutes from anywhere in Africa.</p>
+                        <div class="flex justify-center space-x-2 mb-12">
+                            <div class="w-6 h-1.5 bg-indigo-600 rounded-full"></div>
+                            <div class="w-1.5 h-1.5 bg-gray-200 rounded-full"></div>
+                            <div class="w-1.5 h-1.5 bg-gray-200 rounded-full"></div>
+                        </div>
+                        <div class="w-full py-4 bg-gray-900 text-white font-bold rounded-2xl shadow-xl">Get Started</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPTION 2 -->
+            <div class="flex flex-col items-center">
+                <div class="mb-6 text-center">
+                    <span class="px-3 py-1 bg-purple-900/40 text-purple-400 rounded-full text-xs font-bold uppercase tracking-widest">Option 2</span>
+                    <h2 class="text-2xl font-outfit font-bold mt-2">Premium & Sleek</h2>
+                </div>
+                <div class="mockup-container v2-bg text-white">
+                    <div class="h-3 w-32 bg-gray-900 mx-auto rounded-b-xl mb-12 border-x border-b border-gray-800"></div>
+                    <div class="px-8 h-full flex flex-col justify-center">
+                        <div class="v2-glass p-8 rounded-[40px] mb-12 border border-white/10 relative overflow-hidden group">
+                           <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                           <div class="relative flex flex-col items-center">
+                               <div class="text-6xl mb-4 animate-float">💳</div>
+                               <div class="h-1 w-12 bg-indigo-500/50 rounded-full"></div>
+                           </div>
+                        </div>
+                        <h3 class="text-3xl font-outfit font-bold mb-4 v2-gradient-text text-center">Elite Virtual Cards</h3>
+                        <p class="text-gray-400 text-center leading-relaxed mb-10">Unlimited corporate spending cards for your global operation.</p>
+                        <div class="flex justify-center space-x-2 mb-12">
+                            <div class="w-1.5 h-1.5 bg-gray-700 rounded-full"></div>
+                            <div class="w-6 h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
+                            <div class="w-1.5 h-1.5 bg-gray-700 rounded-full"></div>
+                        </div>
+                        <div class="w-full py-4 bg-white text-black font-extrabold rounded-2xl text-center shadow-[0_0_30px_rgba(255,255,255,0.2)]">Next Screen</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPTION 3 -->
+            <div class="flex flex-col items-center">
+                <div class="mb-6 text-center">
+                    <span class="px-3 py-1 bg-teal-900/40 text-teal-400 rounded-full text-xs font-bold uppercase tracking-widest">Option 3</span>
+                    <h2 class="text-2xl font-outfit font-bold mt-2">Vibrant & Modern</h2>
+                </div>
+                <div class="mockup-container v3-bg text-white">
+                    <div class="h-3 w-32 bg-indigo-900 mx-auto rounded-b-xl mb-8"></div>
+                    <div class="px-8 h-full flex flex-col text-left">
+                        <div class="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center text-4xl mb-8 animate-float">🚀</div>
+                        <h3 class="text-4xl font-outfit font-extrabold mb-4 leading-tight">Scale Your <br>Global Sales</h3>
+                        <p class="text-white/80 leading-relaxed text-lg">Direct supplier payments to any part of the world.</p>
+                    </div>
+                    <div class="absolute bottom-0 left-0 w-full h-[35%] v3-bottom p-8 flex flex-col justify-end">
+                         <div class="flex justify-start space-x-2 mb-8">
+                            <div class="w-1.5 h-1.5 bg-teal-200 rounded-full"></div>
+                            <div class="w-1.5 h-1.5 bg-teal-200 rounded-full"></div>
+                            <div class="w-6 h-1.5 bg-teal-500 rounded-full"></div>
+                        </div>
+                        <div class="w-full py-4 bg-teal-500 text-white font-bold rounded-2xl text-center shadow-lg btn-glow">Continue</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-24 text-center p-12 v2-glass rounded-[50px] border border-white/5">
+            <h2 class="text-3xl font-outfit font-bold mb-6">Decision Time</h2>
+            <p class="text-gray-400 mb-8 max-w-xl mx-auto text-lg leading-relaxed">Each variation has been designed to showcase the production fintech logic we've built (Global Accounts, Cards, and automated KYB).</p>
+            <div class="flex justify-center space-x-8">
+                <div class="flex items-center space-x-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/10">
+                    <span class="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center font-bold">1</span>
+                    <span class="font-semibold">Minimal</span>
+                </div>
+                <div class="flex items-center space-x-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/20 ring-2 ring-indigo-500/50">
+                    <span class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center font-bold">2</span>
+                    <span class="font-semibold">Sleek (Recommended)</span>
+                </div>
+                <div class="flex items-center space-x-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/10">
+                    <span class="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center font-bold">3</span>
+                    <span class="font-semibold">Vibrant</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
