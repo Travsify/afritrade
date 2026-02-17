@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            $table->unsignedBigInteger('wallet_id')->nullable()->after('user_id')->index();
-            // SQLite has trouble with adding FKs to existing tables.
-            // We skip the constraint here and rely on application logic.
-        });
-
+        if (!Schema::hasColumn('transactions', 'wallet_id')) {
+            Schema::table('transactions', function (Blueprint $table) {
+                $table->unsignedBigInteger('wallet_id')->nullable()->after('user_id')->index();
+            });
+        }
     }
 
     /**

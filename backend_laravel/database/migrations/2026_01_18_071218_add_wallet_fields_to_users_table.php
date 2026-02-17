@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->decimal('balance', 15, 2)->default(0.00)->after('password');
-            $table->string('currency', 3)->default('USD')->after('balance');
+            if (!Schema::hasColumn('users', 'balance')) {
+                $table->decimal('balance', 15, 2)->default(0.00)->after('password');
+            }
+            if (!Schema::hasColumn('users', 'currency')) {
+                $table->string('currency', 3)->default('USD')->after('balance');
+            }
         });
     }
 

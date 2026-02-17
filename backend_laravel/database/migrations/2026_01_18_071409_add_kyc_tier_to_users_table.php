@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->integer('kyc_tier')->default(1)->after('balance'); // Default Tier 1 (Basic)
-        });
+        if (!Schema::hasColumn('users', 'kyc_tier')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->integer('kyc_tier')->default(1)->after('balance'); // Default Tier 1 (Basic)
+            });
+        }
     }
 
     /**
