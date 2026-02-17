@@ -20,8 +20,8 @@ COPY backend_laravel /var/www
 # Remove any .env that may have leaked through
 RUN rm -rf /var/www/.env* /var/www/bootstrap/cache/*.php
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Install dependencies (update to sync lock file with composer.json)
+RUN composer update --no-dev --optimize-autoloader --no-interaction
 
 # Nginx config
 COPY nginx.conf /etc/nginx/sites-available/default
