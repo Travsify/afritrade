@@ -4,7 +4,28 @@
 
 @section('content')
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
+            <h3 class="text-lg font-semibold text-gray-800">Transaction History</h3>
+            <form action="{{ route('transactions.index') }}" method="GET" class="flex flex-wrap gap-2">
+                <select name="type" class="rounded border-gray-300 text-sm">
+                    <option value="">All Types</option>
+                    <option value="deposit" {{ request('type') == 'deposit' ? 'selected' : '' }}>Deposit</option>
+                    <option value="withdrawal" {{ request('type') == 'withdrawal' ? 'selected' : '' }}>Withdrawal</option>
+                    <option value="transfer" {{ request('type') == 'transfer' ? 'selected' : '' }}>Transfer</option>
+                    <option value="swap" {{ request('type') == 'swap' ? 'selected' : '' }}>Swap</option>
+                    <option value="bill_payment" {{ request('type') == 'bill_payment' ? 'selected' : '' }}>Bill Payment</option>
+                </select>
+                <select name="status" class="rounded border-gray-300 text-sm">
+                    <option value="">All Status</option>
+                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Failed</option>
+                </select>
+                <input type="date" name="date" value="{{ request('date') }}" class="rounded border-gray-300 text-sm">
+                <input type="text" name="search" placeholder="Ref or User..." value="{{ request('search') }}" class="rounded border-gray-300 text-sm">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Filter</button>
+            </form>
+        </div>
             <table class="min-w-full leading-normal">
                 <thead>
                     <tr>

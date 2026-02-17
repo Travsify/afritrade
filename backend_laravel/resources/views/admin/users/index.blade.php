@@ -4,8 +4,17 @@
 
 @section('content')
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-800">All Users</h3>
+            <form action="{{ route('users.index') }}" method="GET" class="flex space-x-2">
+                <select name="status" class="rounded border-gray-300 text-sm">
+                    <option value="">All Status</option>
+                    <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified</option>
+                    <option value="unverified" {{ request('status') == 'unverified' ? 'selected' : '' }}>Unverified</option>
+                </select>
+                <input type="text" name="search" placeholder="Search name or email..." value="{{ request('search') }}" class="rounded border-gray-300 text-sm">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Filter</button>
+            </form>
         </div>
         
         <div class="overflow-x-auto">

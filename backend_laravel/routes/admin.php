@@ -17,7 +17,29 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
 
     // Transaction Management
-    Route::resource('transactions', \App\Http\Controllers\Admin\TransactionController::class)->only(['index', 'update']);
+    Route::get('transactions/{transaction}', [\App\Http\Controllers\Admin\TransactionController::class, 'show'])->name('transactions.show');
+    Route::put('transactions/{transaction}', [\App\Http\Controllers\Admin\TransactionController::class, 'update'])->name('transactions.update');
+    Route::post('transactions/{transaction}/requery', [\App\Http\Controllers\Admin\TransactionController::class, 'requery'])->name('transactions.requery');
+    Route::resource('transactions', \App\Http\Controllers\Admin\TransactionController::class)->only(['index']);
+
+    // Virtual Accounts
+    Route::resource('virtual-accounts', \App\Http\Controllers\Admin\VirtualAccountController::class)->only(['index', 'show']);
+
+    // Virtual Cards
+    Route::post('virtual-cards/{virtualCard}/freeze', [\App\Http\Controllers\Admin\VirtualCardController::class, 'freeze'])->name('virtual-cards.freeze');
+    Route::post('virtual-cards/{virtualCard}/unfreeze', [\App\Http\Controllers\Admin\VirtualCardController::class, 'unfreeze'])->name('virtual-cards.unfreeze');
+    Route::resource('virtual-cards', \App\Http\Controllers\Admin\VirtualCardController::class)->only(['index', 'show']);
+
+    // Swaps
+    Route::resource('swaps', \App\Http\Controllers\Admin\SwapController::class)->only(['index', 'show']);
+
+    // Bill Payments
+    Route::get('bill-payments/settings', [\App\Http\Controllers\Admin\BillPaymentController::class, 'settings'])->name('bill-payments.settings');
+    Route::resource('bill-payments', \App\Http\Controllers\Admin\BillPaymentController::class)->only(['index', 'show']);
+
+    // Exchange Rates
+    Route::get('exchange-rates', [\App\Http\Controllers\Admin\ExchangeRateController::class, 'index'])->name('exchange-rates.index');
+    Route::post('exchange-rates', [\App\Http\Controllers\Admin\ExchangeRateController::class, 'update'])->name('exchange-rates.update');
 
     // KYC Management
     Route::resource('kyc', \App\Http\Controllers\Admin\KycController::class);
