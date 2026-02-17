@@ -13,6 +13,11 @@
                     <option value="Providus" {{ request('bank_name') == 'Providus' ? 'selected' : '' }}>Providus Bank</option>
                     <option value="Moniepoint" {{ request('bank_name') == 'Moniepoint' ? 'selected' : '' }}>Moniepoint</option>
                 </select>
+                <select name="provider" class="rounded border-gray-300 text-sm">
+                    <option value="">All Providers</option>
+                    <option value="fincra" {{ request('provider') == 'fincra' ? 'selected' : '' }}>Fincra</option>
+                    <option value="anchor" {{ request('provider') == 'anchor' ? 'selected' : '' }}>Anchor</option>
+                </select>
                 <input type="text" name="search" placeholder="Account No or User..." value="{{ request('search') }}" class="rounded border-gray-300 text-sm">
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Filter</button>
             </form>
@@ -25,6 +30,7 @@
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Account Info</th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned To</th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Bank</th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Provider</th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Currency</th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date Created</th>
                     </tr>
@@ -47,6 +53,9 @@
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                 <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-semibold">{{ $account->bank_name }}</span>
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <span class="uppercase text-xs font-bold {{ $account->provider == 'fincra' ? 'text-blue-600' : 'text-gray-600' }}">{{ $account->provider }}</span>
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                  <span class="font-bold">{{ $account->currency }}</span>

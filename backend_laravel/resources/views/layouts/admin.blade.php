@@ -60,6 +60,9 @@
                 <a href="{{ route('admin.notifications.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.notifications.*') ? 'bg-gray-900' : '' }}">
                     Notifications
                 </a>
+                <a href="{{ route('admin.providers.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.providers.*') ? 'bg-gray-900' : '' }}">
+                    Fintech Monitoring
+                </a>
                 <a href="{{ route('admin.settings.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.settings.*') ? 'bg-gray-900' : '' }}">
                     Settings
                 </a>

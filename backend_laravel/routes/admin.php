@@ -59,6 +59,9 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::resource('admins', \App\Http\Controllers\Admin\ManageAdminController::class)->only(['index', 'store', 'destroy']);
 
     // New Modules
+    // Fintech Provider Monitoring
+    Route::get('providers', [\App\Http\Controllers\Admin\ProviderController::class, 'index'])->name('providers.index');
+
     Route::resource('referrals', \App\Http\Controllers\Admin\ReferralController::class)->only(['index']);
     Route::resource('audit', \App\Http\Controllers\Admin\AuditLogController::class)->only(['index']);
     Route::resource('chat', \App\Http\Controllers\Admin\ChatController::class)->only(['index', 'show', 'update']);

@@ -26,7 +26,10 @@ class VirtualAccountController extends Controller
             $query->where('bank_name', 'like', "%{$request->bank_name}%");
         }
         
-        // Filter by active status if column exists (assuming 'is_active' or similar)
+        if ($request->has('provider') && $request->provider) {
+            $query->where('provider', $request->provider);
+        }
+        
         // For now, we just paginate.
 
         $accounts = $query->paginate(15);

@@ -13,6 +13,11 @@
                     <option value="frozen" {{ request('status') == 'frozen' ? 'selected' : '' }}>Frozen</option>
                     <option value="terminated" {{ request('status') == 'terminated' ? 'selected' : '' }}>Terminated</option>
                 </select>
+                <select name="provider" class="rounded border-gray-300 text-sm">
+                    <option value="">All Providers</option>
+                    <option value="maplerad" {{ request('provider') == 'maplerad' ? 'selected' : '' }}>Maplerad</option>
+                    <option value="anchor" {{ request('provider') == 'anchor' ? 'selected' : '' }}>Anchor</option>
+                </select>
                 <input type="text" name="search" placeholder="Last 4 digits or User..." value="{{ request('search') }}" class="rounded border-gray-300 text-sm">
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Filter</button>
             </form>
@@ -25,6 +30,7 @@
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Card Details</th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">User</th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Balance</th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Provider</th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
                     </tr>
@@ -54,6 +60,9 @@
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm font-mono">
                                 {{ $card->currency }} {{ number_format($card->balance, 2) }}
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <span class="uppercase text-xs font-bold {{ $card->provider == 'maplerad' ? 'text-purple-600' : 'text-gray-600' }}">{{ $card->provider }}</span>
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
