@@ -56,6 +56,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'kyc_tier' => 'integer',
+            'balance' => 'decimal:2',
+            'is_kyc_verified' => 'boolean',
         ];
     }
 
@@ -77,5 +80,20 @@ class User extends Authenticatable
     public function notifications()
     {
         return $this->hasMany(Notification::class);
+    }
+
+    public function kycDocuments()
+    {
+        return $this->hasMany(KycDocument::class);
+    }
+
+    public function virtualAccounts()
+    {
+        return $this->hasMany(VirtualAccount::class);
+    }
+
+    public function cards()
+    {
+        return $this->hasMany(VirtualCard::class);
     }
 }

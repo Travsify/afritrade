@@ -36,6 +36,21 @@
                 <a href="{{ route('admin.chat.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.chat.*') ? 'bg-gray-900' : '' }}">
                     Chat Support
                 </a>
+                <a href="{{ route('admin.virtual-accounts.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.virtual-accounts.*') ? 'bg-gray-900' : '' }}">
+                    Virtual Accounts
+                </a>
+                <a href="{{ route('admin.virtual-cards.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.virtual-cards.*') ? 'bg-gray-900' : '' }}">
+                    Virtual Cards
+                </a>
+                 <a href="{{ route('admin.swaps.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.swaps.*') ? 'bg-gray-900' : '' }}">
+                    Swaps
+                </a>
+                 <a href="{{ route('admin.bill-payments.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.bill-payments.*') ? 'bg-gray-900' : '' }}">
+                    Bill Payments
+                </a>
+                 <a href="{{ route('admin.exchange-rates.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.exchange-rates.*') ? 'bg-gray-900' : '' }}">
+                    Exchange Rates
+                </a>
                 <a href="{{ route('admin.audit.index') }}" class="block px-4 py-2 hover:bg-gray-700 {{ request()->routeIs('admin.audit.*') ? 'bg-gray-900' : '' }}">
                     Audit Logs
                 </a>
