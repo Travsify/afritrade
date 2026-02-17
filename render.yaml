@@ -24,7 +24,11 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: LOG_CHANNEL
-        value: errorlog
+        value: stderr
+      - key: LOG_LEVEL
+        value: debug
+      - key: DB_SSLMODE
+        value: prefer
 
 databases:
   - name: afritrad-db
