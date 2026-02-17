@@ -1,0 +1,12 @@
+.env
+.env.*
+backend_laravel/.env
+backend_laravel/.env.*
+vendor/
+node_modules/
+.git/
+storage/logs/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/cache/*
+database/*.sqlite
