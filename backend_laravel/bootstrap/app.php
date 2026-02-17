@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->trustProxies(at: '*');
         $middleware->alias([
             'limit' => \App\Http\Middleware\CheckTransactionLimit::class,
         ]);
