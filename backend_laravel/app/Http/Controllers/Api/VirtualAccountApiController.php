@@ -27,7 +27,10 @@ class VirtualAccountApiController extends Controller
     /**
      * Create a new virtual account.
      */
-    public function store(Request $request, \App\Services\AnchorService $anchorService)
+    /**
+     * Create a new virtual account.
+     */
+    public function store(Request $request, \App\Managers\FintechManager $fintechManager)
     {
         $request->validate([
             'currency' => 'required|in:USD,EUR,GBP,NGN',
@@ -38,57 +41,43 @@ class VirtualAccountApiController extends Controller
         $label = $request->label ?? 'Afritrad Business';
         $user = Auth::user();
 
-        // Check if config enables real API
-        $useRealApi = config('services.anchor.enabled', false);
+        // Use the FintechManager to get the active provider for accounts
+        $service = $fintechManager->getAccountProvider();
+        $providerName = ($service instanceof \App\Services\FincraService) ? 'fincra' : 'anchor';
 
-        if ($useRealApi) {
-            $response = $anchorService->createVirtualAccount([
-                'name' => $user->name,
-                'email' => $user->email,
-                // 'bvn' => $user->kyc_bvn // Assuming we store this
-            ], $currency);
+        $response = $service->createVirtualAccount([
+            'first_name' => explode(' ', $user->name)[0],
+            'last_name' => explode(' ', $user->name)[1] ?? $user->name,
+            'email' => $user->email,
+            'name' => $user->name,
+            'bvn' => $user->kyc_bvn ?? null,
+        ], $currency);
 
-            if ($response['status'] !== 'success') {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Failed to create account: ' . ($response['message'] ?? 'Unknown error')
-                ], 400);
-            }
-
-            // Map Real Data
-            $data = $response['data'];
-            // IMPORTANT: Mapping depends on ACTUAL Anchor response structure.
-            // Using safe fallbacks or typical structure.
-            $accountNumber = $data['account_number'] ?? $data['nuban'] ?? $this->generateAccountNumber(); 
-            $bankName = $data['bank_name'] ?? 'Anchor Partner Bank';
-            
-        } else {
-            // MOCK (Fallback/Dev)
-            $bankName = match($currency) {
-                'USD' => 'Anchor Bank US (Mock)',
-                'EUR' => 'Anchor Bank EU (Mock)',
-                'GBP' => 'Anchor Bank UK (Mock)',
-                'NGN' => 'Wema Bank (Mock)',
-                default => 'Unknown Bank'
-            };
-            $accountNumber = $this->generateAccountNumber();
+        if ($response['status'] !== 'success') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to create account: ' . ($response['message'] ?? 'Unknown error')
+            ], 400);
         }
 
+        $data = $response['data'];
+        
         $account = VirtualAccount::create([
             'user_id' => $user->id,
-            'account_name' => $user->name,
-            'account_number' => $accountNumber,
-            'bank_name' => $bankName,
+            'account_name' => $data['account_name'] ?? $data['accountName'] ?? $user->name,
+            'account_number' => $data['account_number'] ?? $data['nuban'] ?? $data['accountNumber'] ?? null,
+            'bank_name' => $data['bank_name'] ?? $data['bankName'] ?? ($providerName === 'fincra' ? 'Fincra Partner' : 'Anchor Partner'),
             'currency' => $currency,
             'balance' => 0.00,
             'label' => $label,
             'status' => 'active',
-            'reference' => 'anch_' . uniqid(),
-            // Mock static details for now if not provided by API
-            'routing_number' => $currency === 'USD' ? '021000021' : null,
-            'iban' => $currency === 'EUR' ? 'DE89370400440532013000' : null,
-            'sort_code' => $currency === 'GBP' ? '04-00-04' : null,
-            'bic' => $currency === 'EUR' ? 'MARKDEF1500' : null,
+            'provider' => $providerName,
+            'provider_id' => $data['id'] ?? null,
+            'reference' => 'va_' . uniqid(),
+            'routing_number' => $data['routing_number'] ?? null,
+            'iban' => $data['iban'] ?? null,
+            'sort_code' => $data['sort_code'] ?? null,
+            'bic' => $data['bic'] ?? null,
         ]);
 
         return response()->json([
@@ -96,10 +85,5 @@ class VirtualAccountApiController extends Controller
             'message' => 'Virtual account created successfully',
             'data' => $account
         ]);
-    }
-
-    private function generateAccountNumber()
-    {
-        return (string) random_int(1000000000, 9999999999);
     }
 }

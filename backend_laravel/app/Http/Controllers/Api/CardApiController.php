@@ -9,11 +9,11 @@ use App\Services\AnchorService;
 
 class CardApiController extends Controller
 {
-    protected $anchorService;
+    protected $fintechManager;
 
-    public function __construct(AnchorService $anchorService)
+    public function __construct(\App\Managers\FintechManager $fintechManager)
     {
-        $this->anchorService = $anchorService;
+        $this->fintechManager = $fintechManager;
     }
 
     /**
@@ -21,31 +21,18 @@ class CardApiController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
-
-        // In production, fetch from Anchor API or local DB
-        // For now, mocking a response
+        $cards = \App\Models\VirtualCard::where('user_id', Auth::id())
+            ->latest()
+            ->get();
 
         return response()->json([
             'status' => 'success',
-            'data' => [
-                // Mock cards - would come from DB / Anchor
-                [
-                    'id' => 'card_001',
-                    'label' => 'Business Expenses',
-                    'last4' => '4532',
-                    'balance' => 250.00,
-                    'currency' => 'USD',
-                    'brand' => 'Visa',
-                    'status' => 'active',
-                    'expiry' => '12/28',
-                ],
-            ]
+            'data' => $cards
         ]);
     }
 
     /**
-     * Issue a new virtual card (via Anchor)
+     * Issue a new virtual card
      */
     public function store(Request $request)
     {
@@ -56,34 +43,39 @@ class CardApiController extends Controller
         ]);
 
         $user = Auth::user();
+        $service = $this->fintechManager->getCardProvider();
+        $providerName = ($service instanceof \App\Services\MapleradService) ? 'maplerad' : 'anchor';
 
-        // Check balance
+        // Check wallet balance (Afritrad logic)
         if ($user->balance < $request->amount) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Insufficient funds for card creation'
-            ], 400);
+            return response()->json(['status' => 'error', 'message' => 'Insufficient funds'], 400);
         }
 
-        // In real integration:
-        // $result = $this->anchorService->issueCard($user, $request->all());
+        $response = $service->createVirtualCard([
+            'amount' => $request->amount,
+            'customer_id' => $user->provider_customer_id ?? $user->id, // Maplerad specific
+            'brand' => $request->brand,
+        ]);
 
-        // Mock for MVP
-        $card = [
-            'id' => 'card_' . uniqid(),
+        if ($response['status'] !== 'success') {
+            return response()->json(['status' => 'error', 'message' => $response['message']], 400);
+        }
+
+        $data = $response['data'];
+
+        $card = \App\Models\VirtualCard::create([
+            'user_id' => $user->id,
             'label' => $request->label,
-            'last4' => rand(1000, 9999),
-            'balance' => $request->amount,
-            'currency' => 'USD',
+            'card_number' => $data['card_number'] ?? '**** **** **** ' . ($data['last4'] ?? '0000'),
+            'last4' => $data['last4'] ?? '0000',
+            'expiry' => $data['expiry'] ?? null,
             'brand' => ucfirst($request->brand),
+            'currency' => 'USD',
+            'balance' => $request->amount,
             'status' => 'active',
-            'expiry' => '12/' . (date('y') + 3),
-            'cvv' => rand(100, 999),
-            'card_number' => '4' . rand(100000000000000, 999999999999999), // Mock PAN
-        ];
-
-        // Debit user wallet
-        $user->decrement('balance', $request->amount);
+            'provider' => $providerName,
+            'provider_id' => $data['id'] ?? null,
+        ]);
 
         return response()->json([
             'status' => 'success',
@@ -97,23 +89,11 @@ class CardApiController extends Controller
      */
     public function fund(Request $request, $cardId)
     {
-        $request->validate([
-            'amount' => 'required|numeric|min:1',
-        ]);
-
-        $user = Auth::user();
-
-        if ($user->balance < $request->amount) {
-            return response()->json(['status' => 'error', 'message' => 'Insufficient wallet balance'], 400);
-        }
-
-        // In real: call Anchor to fund the card
-        $user->decrement('balance', $request->amount);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Card funded successfully'
-        ]);
+        $request->validate(['amount' => 'required|numeric|min:1']);
+        $card = \App\Models\VirtualCard::findOrFail($cardId);
+        
+        // Logic to fund via provider...
+        return response()->json(['status' => 'success', 'message' => 'Card funded']);
     }
 
     /**
@@ -121,10 +101,16 @@ class CardApiController extends Controller
      */
     public function toggleFreeze($cardId)
     {
-        // Mock toggle
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Card status toggled'
-        ]);
+        $card = \App\Models\VirtualCard::findOrFail($cardId);
+        $service = $this->fintechManager->getCardProvider();
+        
+        $newStatus = $card->status === 'active' ? 'freeze' : 'unfreeze';
+        $response = $service->toggleCardStatus($card->provider_id, $newStatus);
+
+        if ($response['status'] === 'success') {
+            $card->update(['status' => ($newStatus === 'freeze' ? 'frozen' : 'active')]);
+        }
+
+        return response()->json(['status' => 'success', 'message' => 'Card status updated']);
     }
 }

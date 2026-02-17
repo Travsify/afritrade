@@ -64,6 +64,10 @@ Route::middleware(['auth:admin'])->group(function () {
 
     Route::resource('referrals', \App\Http\Controllers\Admin\ReferralController::class)->only(['index']);
     Route::resource('audit', \App\Http\Controllers\Admin\AuditLogController::class)->only(['index']);
+    // Pricing & Markups
+    Route::get('pricing', [\App\Http\Controllers\Admin\MarkupController::class, 'index'])->name('pricing.index');
+    Route::put('pricing/{id}', [\App\Http\Controllers\Admin\MarkupController::class, 'update'])->name('pricing.update');
+
     Route::resource('chat', \App\Http\Controllers\Admin\ChatController::class)->only(['index', 'show', 'update']);
     Route::resource('notifications', \App\Http\Controllers\Admin\NotificationController::class)->only(['index', 'store', 'destroy']);
 });

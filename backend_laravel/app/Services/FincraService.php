@@ -64,6 +64,59 @@ class FincraService
     }
 
     /**
+     * Get Exchange Rate
+     */
+    public function getExchangeRate($sourceCurrency, $destinationCurrency)
+    {
+        return $this->processRequest('/wallets/exchange-rate', [
+            'sourceCurrency' => $sourceCurrency,
+            'destinationCurrency' => $destinationCurrency,
+        ], 'GET');
+    }
+
+    /**
+     * List supported currencies and their status.
+     */
+    public function listCurrencies()
+    {
+        return $this->processRequest('/core/currencies', [], 'GET');
+    }
+
+    private function processRequest($endpoint, $payload, $method = 'POST')
+    {
+        try {
+            $url = $this->baseUrl . $endpoint;
+            
+            $request = Http::withHeaders([
+                'api-key' => $this->apiKey,
+                'merchant-id' => $this->merchantId,
+                'Accept' => 'application/json',
+            ]);
+
+            $response = $method === 'POST' ? $request->post($url, $payload) : $request->get($url, $payload);
+
+            if ($response->successful()) {
+                return [
+                    'status' => 'success',
+                    'data' => $response->json()['data'] ?? $response->json()
+                ];
+            }
+
+            Log::error("Fincra API Error ({$endpoint}): " . $response->body());
+            return [
+                'status' => 'error',
+                'message' => $response->json()['message'] ?? 'Fincra API operation failed'
+            ];
+        } catch (\Exception $e) {
+            Log::error("Fincra Exception: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'System error connecting to Fincra'
+            ];
+        }
+    }
+
+    /**
      * List all bill payment categories (Airtime, Data, Power).
      */
     public function getBillCategories()

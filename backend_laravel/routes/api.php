@@ -16,6 +16,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // KYC
     Route::get('/kyc_status', [\App\Http\Controllers\Api\KycApiController::class, 'status']);
     Route::post('/kyc/verify', [\App\Http\Controllers\Api\KycApiController::class, 'verifyIdentity']);
+    Route::post('/kyc/verify-business', [\App\Http\Controllers\Api\KycApiController::class, 'verifyBusiness']);
 
 
     // Chat
@@ -83,3 +84,6 @@ Route::post('/register', [\App\Http\Controllers\Api\AuthApiController::class, 'r
 Route::post('/login', [\App\Http\Controllers\Api\AuthApiController::class, 'login']);
 
 Route::get('/settings', [\App\Http\Controllers\Api\SettingsApiController::class, 'index']);
+
+// Fintech Webhooks
+Route::post('/webhooks/{provider}', [\App\Http\Controllers\Api\WebhookController::class, 'handle']);
