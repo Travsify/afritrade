@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
             <h3 class="text-lg font-semibold text-gray-800">Exchange History</h3>
-            <form action="{{ route('swaps.index') }}" method="GET" class="flex flex-wrap gap-2">
+            <form action="{{ route('admin.swaps.index') }}" method="GET" class="flex flex-wrap gap-2">
                 <input type="text" name="search" placeholder="Ref or User..." value="{{ request('search') }}" class="rounded border-gray-300 text-sm">
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Filter</button>
             </form>
@@ -32,7 +32,7 @@
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                 @if($swap->user)
-                                    <a href="{{ route('users.show', $swap->user_id) }}" class="text-blue-600 hover:underline">
+                                    <a href="{{ route('admin.users.show', $swap->user_id) }}" class="text-blue-600 hover:underline">
                                         {{ $swap->user->name }}
                                     </a>
                                 @else
@@ -52,7 +52,7 @@
                                 {{ $swap->created_at->format('M d, H:i') }}
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                <a href="{{ route('swaps.show', $swap->id) }}" class="text-blue-600 hover:text-blue-900">Details</a>
+                                <a href="{{ route('admin.swaps.show', $swap->id) }}" class="text-blue-600 hover:text-blue-900">Details</a>
                             </td>
                         </tr>
                     @endforeach

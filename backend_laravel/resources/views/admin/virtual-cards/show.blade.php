@@ -78,14 +78,14 @@
         
         <div class="px-4 py-4 sm:px-6 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
              @if($virtualCard->status == 'active')
-                <form action="{{ route('virtual-cards.freeze', $virtualCard->id) }}" method="POST" onsubmit="return confirm('Freeze this card?');">
+                <form action="{{ route('admin.virtual-cards.freeze', $virtualCard->id) }}" method="POST" onsubmit="return confirm('Freeze this card?');">
                     @csrf
                      <button type="submit" class="bg-yellow-500 text-white px-4 py-2 rounded text-sm hover:bg-yellow-600">
                         Freeze Card
                     </button>
                 </form>
             @elseif($virtualCard->status == 'frozen')
-                <form action="{{ route('virtual-cards.unfreeze', $virtualCard->id) }}" method="POST" onsubmit="return confirm('Unfreeze this card?');">
+                <form action="{{ route('admin.virtual-cards.unfreeze', $virtualCard->id) }}" method="POST" onsubmit="return confirm('Unfreeze this card?');">
                     @csrf
                      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
                         Unfreeze Card

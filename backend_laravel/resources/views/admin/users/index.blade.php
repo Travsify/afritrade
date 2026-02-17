@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-800">All Users</h3>
-            <form action="{{ route('users.index') }}" method="GET" class="flex space-x-2">
+            <form action="{{ route('admin.users.index') }}" method="GET" class="flex space-x-2">
                 <select name="status" class="rounded border-gray-300 text-sm">
                     <option value="">All Status</option>
                     <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified</option>
@@ -58,8 +58,8 @@
                                 </p>
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                <a href="{{ route('users.show', $user->id) }}" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure?');">
+                                <a href="{{ route('admin.users.show', $user->id) }}" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
+                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-900">Ban</button>

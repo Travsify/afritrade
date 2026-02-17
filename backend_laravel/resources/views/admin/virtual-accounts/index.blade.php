@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
             <h3 class="text-lg font-semibold text-gray-800">Account Inventory</h3>
-            <form action="{{ route('virtual-accounts.index') }}" method="GET" class="flex flex-wrap gap-2">
+            <form action="{{ route('admin.virtual-accounts.index') }}" method="GET" class="flex flex-wrap gap-2">
                 <select name="bank_name" class="rounded border-gray-300 text-sm">
                     <option value="">All Banks</option>
                     <option value="Wema" {{ request('bank_name') == 'Wema' ? 'selected' : '' }}>Wema Bank</option>
@@ -38,7 +38,7 @@
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                 @if($account->user)
-                                    <a href="{{ route('users.show', $account->user_id) }}" class="text-blue-600 hover:underline">
+                                    <a href="{{ route('admin.users.show', $account->user_id) }}" class="text-blue-600 hover:underline">
                                         {{ $account->user->name }}
                                     </a>
                                 @else

@@ -26,7 +26,7 @@
                 <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                     <dt class="text-sm font-medium text-gray-500">User</dt>
                     <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        <a href="{{ route('users.show', $transaction->user_id) }}" class="text-blue-600 hover:underline">
+                        <a href="{{ route('admin.users.show', $transaction->user_id) }}" class="text-blue-600 hover:underline">
                             {{ $transaction->user->name }}
                         </a>
                         <br>
@@ -67,7 +67,7 @@
         
         <div class="px-4 py-4 sm:px-6 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
             @if($transaction->status == 'pending')
-                <form action="{{ route('transactions.requery', $transaction->id) }}" method="POST">
+                <form action="{{ route('admin.transactions.requery', $transaction->id) }}" method="POST">
                     @csrf
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
                         Re-query Status
@@ -76,7 +76,7 @@
             @endif
             
             @if($transaction->status != 'completed')
-                <form action="{{ route('transactions.update', $transaction->id) }}" method="POST" onsubmit="return confirm('Manually mark as completed?');">
+                <form action="{{ route('admin.transactions.update', $transaction->id) }}" method="POST" onsubmit="return confirm('Manually mark as completed?');">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="status" value="completed">
@@ -84,7 +84,7 @@
                         Mark Completed
                     </button>
                 </form>
-                <form action="{{ route('transactions.update', $transaction->id) }}" method="POST" onsubmit="return confirm('Manually mark as failed?');">
+                <form action="{{ route('admin.transactions.update', $transaction->id) }}" method="POST" onsubmit="return confirm('Manually mark as failed?');">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="status" value="failed">

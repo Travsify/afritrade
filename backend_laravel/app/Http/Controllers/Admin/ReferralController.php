@@ -13,12 +13,11 @@ class ReferralController extends Controller
      */
     public function index()
     {
-        $referrals = \App\Models\Referral::where('referrer_id', auth()->id())
-            ->with('user:id,name,email,created_at')
-            ->latest()
+        $referrals = \App\Models\Referral::latest()
+            ->with(['user:id,name,email,created_at', 'referrer:id,name,email'])
             ->paginate(20);
 
-        return response()->json(['referrals' => $referrals]);
+        return view('admin.referrals.index', compact('referrals'));
     }
 
     /**

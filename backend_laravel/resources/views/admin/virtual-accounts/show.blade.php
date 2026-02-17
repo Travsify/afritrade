@@ -21,16 +21,14 @@
                         {{ $virtualAccount->account_name }}
                     </dd>
                 </div>
-                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Assigned User</dt>
+                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">User</dt>
                     <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        @if($virtualAccount->user)
-                            <a href="{{ route('users.show', $virtualAccount->user_id) }}" class="text-blue-600 hover:underline">
-                                {{ $virtualAccount->user->name }}
-                            </a>
-                        @else
-                            <span class="text-gray-400">Unassigned</span>
-                        @endif
+                        <a href="{{ route('admin.users.show', $virtualAccount->user_id) }}" class="text-blue-600 hover:underline">
+                            {{ $virtualAccount->user->name }}
+                        </a>
+                        <br>
+                        <span class="text-gray-500">{{ $virtualAccount->user->email }}</span>
                     </dd>
                 </div>
                 <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">

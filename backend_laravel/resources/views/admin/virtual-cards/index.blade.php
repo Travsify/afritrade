@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
             <h3 class="text-lg font-semibold text-gray-800">Card Inventory</h3>
-            <form action="{{ route('virtual-cards.index') }}" method="GET" class="flex flex-wrap gap-2">
+            <form action="{{ route('admin.virtual-cards.index') }}" method="GET" class="flex flex-wrap gap-2">
                 <select name="status" class="rounded border-gray-300 text-sm">
                     <option value="">All Status</option>
                     <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
@@ -45,7 +45,7 @@
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                 @if($card->user)
-                                    <a href="{{ route('users.show', $card->user_id) }}" class="text-blue-600 hover:underline">
+                                    <a href="{{ route('admin.users.show', $card->user_id) }}" class="text-blue-600 hover:underline">
                                         {{ $card->user->name }}
                                     </a>
                                 @else
@@ -62,7 +62,7 @@
                                 </span>
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                <a href="{{ route('virtual-cards.show', $card->id) }}" class="text-blue-600 hover:text-blue-900">Manage</a>
+                                <a href="{{ route('admin.virtual-cards.show', $card->id) }}" class="text-blue-600 hover:text-blue-900">Manage</a>
                             </td>
                         </tr>
                     @endforeach

@@ -34,7 +34,7 @@ class BillPaymentController extends Controller
     public function show(Transaction $transaction)
     {
         if ($transaction->type !== 'bill_payment') {
-            return redirect()->route('transactions.show', $transaction->id);
+            return redirect()->route('admin.transactions.show', $transaction->id);
         }
         return view('admin.bill-payments.show', compact('transaction'));
     }

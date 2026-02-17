@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
             <h3 class="text-lg font-semibold text-gray-800">Transaction History</h3>
-            <form action="{{ route('transactions.index') }}" method="GET" class="flex flex-wrap gap-2">
+            <form action="{{ route('admin.transactions.index') }}" method="GET" class="flex flex-wrap gap-2">
                 <select name="type" class="rounded border-gray-300 text-sm">
                     <option value="">All Types</option>
                     <option value="deposit" {{ request('type') == 'deposit' ? 'selected' : '' }}>Deposit</option>

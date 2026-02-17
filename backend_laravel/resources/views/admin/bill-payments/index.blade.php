@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
             <h3 class="text-lg font-semibold text-gray-800">Payment Logs</h3>
-            <form action="{{ route('bill-payments.index') }}" method="GET" class="flex flex-wrap gap-2">
+            <form action="{{ route('admin.bill-payments.index') }}" method="GET" class="flex flex-wrap gap-2">
                 <select name="status" class="rounded border-gray-300 text-sm">
                     <option value="">All Status</option>
                     <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
@@ -38,7 +38,7 @@
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                 @if($payment->user)
-                                    <a href="{{ route('users.show', $payment->user_id) }}" class="text-blue-600 hover:underline">
+                                    <a href="{{ route('admin.users.show', $payment->user_id) }}" class="text-blue-600 hover:underline">
                                         {{ $payment->user->name }}
                                     </a>
                                 @else
@@ -58,7 +58,7 @@
                                 {{ $payment->created_at->format('M d, H:i') }}
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                <a href="{{ route('bill-payments.show', $payment->id) }}" class="text-blue-600 hover:text-blue-900">Details</a>
+                                <a href="{{ route('admin.bill-payments.show', $payment->id) }}" class="text-blue-600 hover:text-blue-900">Details</a>
                             </td>
                         </tr>
                     @endforeach
