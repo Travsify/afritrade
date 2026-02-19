@@ -64,49 +64,11 @@ class NotificationService
     }
 
     /**
-     * Send FCM Push Notification via HTTP v1 API
+     * Send FCM Push Notification via Background Job
      */
     protected function sendPushNotification(int $userId, string $title, string $body, array $data = []): void
     {
-        try {
-            $user = User::find($userId);
-            if (!$user || empty($user->fcm_token)) return;
-
-            $serverKey = config('services.firebase.server_key');
-            if (empty($serverKey)) {
-                Log::debug('FCM server key not configured, skipping push notification');
-                return;
-            }
-
-            $payload = [
-                'to' => $user->fcm_token,
-                'notification' => [
-                    'title' => $title,
-                    'body' => $body,
-                    'sound' => 'default',
-                ],
-                'data' => array_merge($data, [
-                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
-                    'type' => $data['action'] ?? 'general',
-                ]),
-                'priority' => 'high',
-            ];
-
-            $response = Http::withHeaders([
-                'Authorization' => 'key=' . $serverKey,
-                'Content-Type' => 'application/json',
-            ])->post('https://fcm.googleapis.com/fcm/send', $payload);
-
-            if ($response->failed()) {
-                Log::warning('FCM push failed', [
-                    'user_id' => $userId,
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ]);
-            }
-        } catch (\Exception $e) {
-            Log::error('FCM push exception: ' . $e->getMessage());
-        }
+        \App\Jobs\SendPushNotificationJob::dispatch($userId, $title, $body, $data);
     }
 
     // ─── Convenience Methods ───

@@ -49,10 +49,20 @@ class TransferApiController extends Controller
 
         $recipient = User::where('email', $request->recipient_email)->first();
 
-        // Atomic Transaction
+        // Atomic Transaction with Pessimistic Locking
         DB::transaction(function () use ($sender, $recipient, $request) {
+            // Find wallet with LOCK to prevent race conditions (double-spend)
+            $wallet = \App\Models\Wallet::where('user_id', $sender->id)
+                ->where('currency', $sender->currency ?? 'USD')
+                ->lockForUpdate()
+                ->first();
+
+            if (!$wallet || $wallet->balance < $request->amount) {
+                throw new \Exception('Insufficient funds or wallet not found');
+            }
+
             // Debit Sender
-            $sender->decrement('balance', $request->amount);
+            $wallet->decrement('balance', $request->amount);
             
             // Credit Recipient
             $recipient->increment('balance', $request->amount);
@@ -60,9 +70,10 @@ class TransferApiController extends Controller
             // Log for Sender
             Transaction::create([
                 'user_id' => $sender->id,
+                'wallet_id' => $wallet->id,
                 'type' => 'debit',
                 'amount' => $request->amount,
-                'currency' => $sender->currency ?? 'USD',
+                'currency' => $wallet->currency,
                 'recipient' => $recipient->email,
                 'status' => 'completed',
                 'reference' => 'P2P-' . uniqid()
@@ -73,7 +84,7 @@ class TransferApiController extends Controller
                 'user_id' => $recipient->id,
                 'type' => 'credit',
                 'amount' => $request->amount,
-                'currency' => $recipient->currency ?? 'USD',
+                'currency' => $wallet->currency,
                 'recipient' => $sender->email, // From
                 'status' => 'completed',
                 'reference' => 'P2P-RX-' . uniqid()

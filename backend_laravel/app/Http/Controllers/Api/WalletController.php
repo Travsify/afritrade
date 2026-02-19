@@ -90,17 +90,19 @@ class WalletController extends Controller
              return response()->json(['error' => 'Invalid transaction PIN'], 403);
         }
 
-        $sourceWallet = Wallet::where('id', $request->source_wallet_id)->where('user_id', $user->id)->firstOrFail();
+        $sourceWallet = Wallet::where('id', $request->source_wallet_id)
+            ->where('user_id', $user->id)
+            ->lockForUpdate()
+            ->firstOrFail();
 
         if ($sourceWallet->balance < $request->amount) {
             return response()->json(['error' => 'Insufficient funds'], 400);
         }
 
         $recipientUser = \App\Models\User::where('email', $request->recipient_email)->first();
-        // Find recipient wallet of same currency, or create? For now assume they need one.
-        // Or if not found, maybe fail or create pending?
-        // Let's assume we find one or fail for MVP.
-        $recipientWallet = Wallet::where('user_id', $recipientUser->id)->where('currency', $sourceWallet->currency)->first();
+        $recipientWallet = Wallet::where('user_id', $recipientUser->id)
+            ->where('currency', $sourceWallet->currency)
+            ->first();
 
         if (!$recipientWallet) {
              return response()->json(['error' => 'Recipient needs a ' . $sourceWallet->currency . ' wallet'], 400);
@@ -108,13 +110,12 @@ class WalletController extends Controller
 
         DB::transaction(function () use ($sourceWallet, $recipientWallet, $request, $user, $recipientUser) {
             // Debit Sender
-            $sourceWallet->balance -= $request->amount;
-            $sourceWallet->save();
+            $sourceWallet->decrement('balance', $request->amount);
 
             Transaction::create([
                 'user_id' => $user->id,
                 'wallet_id' => $sourceWallet->id,
-                'type' => 'debit', // transfer_out
+                'type' => 'debit',
                 'amount' => $request->amount,
                 'currency' => $sourceWallet->currency,
                 'recipient' => $recipientUser->email,
@@ -123,13 +124,12 @@ class WalletController extends Controller
             ]);
 
             // Credit Recipient
-            $recipientWallet->balance += $request->amount;
-            $recipientWallet->save();
+            $recipientWallet->increment('balance', $request->amount);
 
             Transaction::create([
                 'user_id' => $recipientUser->id,
                 'wallet_id' => $recipientWallet->id,
-                'type' => 'credit', // transfer_in
+                'type' => 'credit',
                 'amount' => $request->amount,
                 'currency' => $recipientWallet->currency,
                 'status' => 'completed',

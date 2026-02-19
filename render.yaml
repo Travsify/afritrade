@@ -29,6 +29,8 @@ services:
         value: warning
       - key: DB_SSLMODE
         value: prefer
+      - key: QUEUE_CONNECTION
+        value: database
       - key: FLUTTERWAVE_SECRET_KEY
         sync: false
       - key: FLUTTERWAVE_PUBLIC_KEY
@@ -41,6 +43,30 @@ services:
         sync: false
       - key: FINCRA_SECRET_KEY
         sync: false
+
+  - type: worker
+    name: afritrad-worker
+    env: docker
+    dockerContext: .
+    dockerFilePath: Dockerfile
+    command: php artisan queue:work --tries=3 --timeout=90
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: afritrad-db
+          property: connectionString
+      - key: DB_URL
+        fromDatabase:
+          name: afritrad-db
+          property: connectionString
+      - key: APP_KEY
+        value: base64:uXKB0w8Ce1VPMDOPqIv/j/864HJNxTy/JB2Tkm29Cio=
+      - key: APP_ENV
+        value: production
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: QUEUE_CONNECTION
+        value: database
 
 databases:
   - name: afritrad-db
