@@ -42,8 +42,8 @@ php artisan view:clear
 echo "=== RUNNING MIGRATIONS ==="
 php artisan migrate --force
 
-echo "=== SEEDING DEFAULT MARKUPS ==="
-php artisan db:seed --class=ServiceMarkupSeeder --force
+echo "=== SEEDING DEFAULT SYSTEM DATA ==="
+php artisan db:seed --force
 
 echo "=== CONFIG VERIFICATION ==="
 php artisan tinker --execute="echo 'DB Connection: ' . config('database.default') . PHP_EOL . 'DB URL set: ' . (config('database.connections.pgsql.url') ? 'YES' : 'NO');"

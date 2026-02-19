@@ -25,6 +25,13 @@ class User extends Authenticatable
         'balance',
         'kyc_tier', // 1, 2, 3
         'verification_status', // unverified, pending, verified, rejected
+        'fcm_token',
+        'country',
+        'business_name',
+        'otp_code',
+        'otp_expires_at',
+        'is_otp_verified',
+        'kyb_status',
     ];
 
     /**
@@ -36,6 +43,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'transaction_pin',
+        'otp_code',
     ];
 
     /**
@@ -59,6 +67,8 @@ class User extends Authenticatable
             'kyc_tier' => 'integer',
             'balance' => 'decimal:2',
             'is_kyc_verified' => 'boolean',
+            'is_otp_verified' => 'boolean',
+            'otp_expires_at' => 'datetime',
         ];
     }
 

@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import '../../../../core/theme/app_colors.dart';
+import 'package:afritrad_mobile/core/theme/app_colors.dart';
+import 'package:afritrad_mobile/core/constants/api_config.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
   const NotificationCenterScreen({super.key});
@@ -39,7 +40,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('https://admin.afritradepay.com/api/notifications'),
+        Uri.parse(AppApiConfig.notifications),
         headers: headers,
       );
 
@@ -64,7 +65,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     try {
       final headers = await _getHeaders();
       await http.post(
-        Uri.parse('https://admin.afritradepay.com/api/notifications/$id/read'),
+        Uri.parse('${AppApiConfig.notifications}/$id/read'),
         headers: headers,
       );
       _loadNotifications();
@@ -77,7 +78,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     try {
       final headers = await _getHeaders();
       await http.post(
-        Uri.parse('https://admin.afritradepay.com/api/notifications/mark-all-read'),
+        Uri.parse('${AppApiConfig.notifications}/mark-all-read'),
         headers: headers,
       );
       _loadNotifications();
@@ -192,7 +193,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         onDismissed: (_) async {
           final headers = await _getHeaders();
           await http.delete(
-            Uri.parse('https://admin.afritradepay.com/api/notifications/${notification['id']}'),
+            Uri.parse('${AppApiConfig.notifications}/${notification['id']}'),
             headers: headers,
           );
         },

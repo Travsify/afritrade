@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:afritrad_mobile/features/auth/presentation/pages/auth_wrapper.dart'; // For navigation
 
+import '../../../../core/constants/api_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'otp_verification_screen.dart';
 
@@ -18,42 +19,82 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
+  int _currentStep = 1;
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _businessController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  String _selectedCountry = "Nigeria";
+
+  final List<String> _countries = [
+    "Nigeria", "South Africa", "Kenya", "Ghana", "Rwanda", "Uganda", "Cameroon", "Côte d'Ivoire"
+  ];
+
   bool _isLoading = false;
   bool _obscurePassword = true;
 
+  void _nextStep() {
+    if (_currentStep == 1) {
+       // Validate name & country
+       if (_nameController.text.isEmpty) {
+          _showError("Full Name is required");
+          return;
+       }
+       setState(() => _currentStep = 2);
+    } else if (_currentStep == 2) {
+       // Validate business name
+       if (_businessController.text.isEmpty) {
+          _showError("Business Name is required");
+          return;
+       }
+       setState(() => _currentStep = 3);
+    }
+  }
+
+  void _prevStep() {
+    if (_currentStep > 1) {
+       setState(() => _currentStep--);
+    } else {
+       Navigator.pop(context);
+    }
+  }
+
   Future<void> _register() async {
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showError("Passwords do not match");
+      return;
+    }
+
     setState(() => _isLoading = true);
     
     try {
       final response = await http.post(
-        Uri.parse('https://admin.afritradepay.com/api/register.php'),
+        Uri.parse(AppApiConfig.register),
         body: jsonEncode({
-          'name': _emailController.text.split('@')[0], // Simple name derivation
+          'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
           'password': _passwordController.text.trim(),
+          'country': _selectedCountry,
+          'business_name': _businessController.text.trim(),
         }),
-        headers: {'Content-Type': 'application/json'},
+        headers: AppApiConfig.getHeaders(null),
       );
 
       final data = jsonDecode(response.body);
       
       if (response.statusCode == 200 && data['status'] == 'success') {
          if (mounted) {
-            // Save User ID & Token
             final user = data['user'];
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('user_id', user['id'].toString());
-            await prefs.setString('user_name', user['name']);
-            await prefs.setString('user_email', user['email']);
-            await prefs.setBool('is_logged_in', true);
+            final otp = data['user']['otp_debug']; // Keep for easy testing as per plan
             
-            // Bypass OTP for MVP - Go straight to App
              Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const AuthWrapper()), // Correct import needed
+              MaterialPageRoute(builder: (context) => OTPVerificationScreen(
+                email: _emailController.text.trim(),
+                phone: "", // Keep for API compatibility in OTP screen if needed, but email is target
+                password: _passwordController.text.trim(),
+              )),
             );
          }
       } else {
@@ -89,7 +130,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             ),
             child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _prevStep,
         ),
       ),
       body: Stack(
@@ -116,7 +157,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                 border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                               ),
                               child: Text(
-                                "STEP 1/4",
+                                "STEP $_currentStep/3",
                                 style: GoogleFonts.outfit(
                                   color: AppColors.primary,
                                   fontSize: 12,
@@ -152,50 +193,70 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     delay: const Duration(milliseconds: 200),
                     child: Column(
                       children: [
-                        _buildInputField(
-                          controller: _emailController,
-                          label: "Email Address",
-                          hint: "name@example.com",
-                          icon: Icons.alternate_email_rounded,
-                        ),
-                        const SizedBox(height: 20),
-                        _buildInputField(
-                          controller: _phoneController,
-                          label: "Phone Number",
-                          hint: "+234 800 000 0000",
-                          icon: Icons.phone_android_rounded,
-                          keyboardType: TextInputType.phone,
-                        ),
-                        const SizedBox(height: 20),
-                        _buildInputField(
-                          controller: _passwordController,
-                          label: "Create Password",
-                          hint: "••••••••",
-                          icon: Icons.lock_outline_rounded,
-                          isPassword: true,
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                "Must be at least 8 characters long",
-                                style: GoogleFonts.outfit(
-                                  color: AppColors.textMuted,
-                                  fontSize: 12,
+                        if (_currentStep == 1) ...[
+                          _buildInputField(
+                            controller: _nameController,
+                            label: "Full Name",
+                            hint: "John Doe",
+                            icon: Icons.person_outline_rounded,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildCountryPicker(),
+                        ],
+                        if (_currentStep == 2) ...[
+                          _buildInputField(
+                            controller: _businessController,
+                            label: "Business Name",
+                            hint: "Afritrade Ventures",
+                            icon: Icons.business_rounded,
+                          ),
+                        ],
+                        if (_currentStep == 3) ...[
+                           _buildInputField(
+                            controller: _emailController,
+                            label: "Email Address",
+                            hint: "name@example.com",
+                            icon: Icons.alternate_email_rounded,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildInputField(
+                            controller: _passwordController,
+                            label: "Create Password",
+                            hint: "••••••••",
+                            icon: Icons.lock_outline_rounded,
+                            isPassword: true,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildInputField(
+                            controller: _confirmPasswordController,
+                            label: "Confirm Password",
+                            hint: "••••••••",
+                            icon: Icons.lock_clock,
+                            isPassword: true,
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  "Must be at least 8 characters long",
+                                  style: GoogleFonts.outfit(
+                                    color: AppColors.textMuted,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 48),
                         SizedBox(
                           width: double.infinity,
                           height: 60,
                           child: ElevatedButton(
-                            onPressed: _isLoading ? null : _register,
+                            onPressed: _isLoading ? null : (_currentStep < 3 ? _nextStep : _register),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
@@ -217,7 +278,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        "Continue",
+                                        _currentStep < 3 ? "Continue" : "Create Account",
                                         style: GoogleFonts.outfit(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -341,6 +402,51 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ],
     );
   }
-  
+  Widget _buildCountryPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Select Country",
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.glassBorder),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedCountry,
+              dropdownColor: AppColors.surface,
+              icon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted),
+              isExpanded: true,
+              style: GoogleFonts.outfit(color: Colors.white, fontSize: 16),
+              items: _countries.map((String country) {
+                return DropdownMenuItem<String>(
+                  value: country,
+                  child: Text(country),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedCountry = newValue;
+                  });
+                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 

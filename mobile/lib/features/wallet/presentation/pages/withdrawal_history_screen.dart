@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/constants/api_config.dart';
 
 class WithdrawalHistoryScreen extends StatefulWidget {
   const WithdrawalHistoryScreen({super.key});
@@ -38,7 +39,7 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('https://admin.afritradepay.com/api/withdrawals'),
+        Uri.parse(AppApiConfig.withdrawals),
         headers: headers,
       );
 

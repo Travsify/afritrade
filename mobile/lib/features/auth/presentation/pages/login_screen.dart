@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:afritrad_mobile/features/auth/presentation/pages/auth_wrapper.dart';
 import '../../data/kyc_provider.dart';
+import '../../../../core/constants/api_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'registration_screen.dart';
@@ -31,12 +32,12 @@ class _LoginScreenState extends State<LoginScreen> {
     
     try {
       final response = await http.post(
-        Uri.parse('https://admin.afritradepay.com/api/login'), // Updated to Laravel API
+        Uri.parse(AppApiConfig.login),
         body: jsonEncode({
           'email': _emailController.text.trim(),
           'password': _passwordController.text.trim(),
         }),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: AppApiConfig.getHeaders(null),
       );
 
       final data = jsonDecode(response.body);

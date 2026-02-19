@@ -102,4 +102,25 @@ class NotificationApiController extends Controller
             'count' => $count
         ]);
     }
+
+    /**
+     * Update FCM Token for the authenticated user.
+     */
+    public function updateFcmToken(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string'
+        ]);
+
+        $user = Auth::user();
+        /** @var \App\Models\User $user */
+        $user->update([
+            'fcm_token' => $request->token
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'FCM Token updated successfully'
+        ]);
+    }
 }

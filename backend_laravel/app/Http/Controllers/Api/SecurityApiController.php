@@ -10,6 +10,18 @@ use Illuminate\Support\Facades\Auth;
 class SecurityApiController extends Controller
 {
     /**
+     * Check if a transaction PIN is set.
+     */
+    public function checkPinStatus()
+    {
+        $user = Auth::user();
+        return response()->json([
+            'status' => 'success',
+            'is_pin_set' => !empty($user->transaction_pin)
+        ]);
+    }
+
+    /**
      * Set a new transaction PIN.
      * Only allowed if no PIN is currently set.
      */
@@ -21,6 +33,7 @@ class SecurityApiController extends Controller
 
         $user = Auth::user();
 
+        /** @var \App\Models\User $user */
         if ($user->transaction_pin) {
             return response()->json([
                 'status' => 'error',
@@ -80,7 +93,7 @@ class SecurityApiController extends Controller
         ]);
 
         $user = Auth::user();
-
+        /** @var \App\Models\User $user */
         if (!$user->transaction_pin) {
              return response()->json([
                 'status' => 'error',

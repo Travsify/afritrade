@@ -6,29 +6,31 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:iconsax/iconsax.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/services/anchor_service.dart';
-import '../../../payments/presentation/pages/pay_supplier_screen.dart';
-import '../../../payments/presentation/pages/fund_wallet_screen.dart';
-import '../../../accounts/presentation/pages/virtual_accounts_screen.dart';
-import '../../../cards/presentation/pages/virtual_cards_screen.dart';
-import '../../../accounts/presentation/pages/accounts_screen.dart';
-import '../../../swap/presentation/pages/swap_screen.dart';
-import '../../../profile/presentation/pages/profile_screen.dart';
-import '../../../referral/presentation/pages/referral_screen.dart';
+import 'package:afritrad_mobile/core/theme/app_colors.dart';
+import 'package:afritrad_mobile/core/theme/app_theme.dart';
+import 'package:afritrad_mobile/core/services/anchor_service.dart';
+import 'package:afritrad_mobile/features/payments/presentation/pages/pay_supplier_screen.dart';
+import 'package:afritrad_mobile/features/payments/presentation/pages/fund_wallet_screen.dart';
+import 'package:afritrad_mobile/features/accounts/presentation/pages/virtual_accounts_screen.dart';
+import 'package:afritrad_mobile/features/cards/presentation/pages/virtual_cards_screen.dart';
+import 'package:afritrad_mobile/features/accounts/presentation/pages/accounts_screen.dart';
+import 'package:afritrad_mobile/features/swap/presentation/pages/swap_screen.dart';
+import 'package:afritrad_mobile/features/profile/presentation/pages/profile_screen.dart';
+import 'package:afritrad_mobile/features/referral/presentation/pages/referral_screen.dart';
 // Productivity Tools
-import '../../../tools/presentation/pages/bulk_payment_screen.dart';
-import '../../../tools/presentation/pages/tax_report_screen.dart';
-import '../../../tools/presentation/pages/order_management_screen.dart';
+import 'package:afritrad_mobile/features/tools/presentation/pages/bulk_payment_screen.dart';
+import 'package:afritrad_mobile/features/tools/presentation/pages/tax_report_screen.dart';
+import 'package:afritrad_mobile/features/tools/presentation/pages/order_management_screen.dart';
 // Other Features
-import '../../../calculator/presentation/pages/business_calculator_screen.dart';
-import '../../../beneficiaries/presentation/pages/saved_beneficiaries_screen.dart';
-import '../../../insights/presentation/pages/trade_insights_screen.dart';
-import '../../../alerts/presentation/pages/rate_alerts_screen.dart';
-import '../../../scheduler/presentation/pages/payment_scheduler_screen.dart';
-import '../../../invoices/presentation/pages/invoices_screen.dart';
-import '../../../wallet/presentation/pages/withdrawal_screen.dart';
+import 'package:afritrad_mobile/features/calculator/presentation/pages/business_calculator_screen.dart';
+import 'package:afritrad_mobile/features/beneficiaries/presentation/pages/saved_beneficiaries_screen.dart';
+import 'package:afritrad_mobile/features/insights/presentation/pages/trade_insights_screen.dart';
+import 'package:afritrad_mobile/features/alerts/presentation/pages/rate_alerts_screen.dart';
+import 'package:afritrad_mobile/features/scheduler/presentation/pages/payment_scheduler_screen.dart';
+import 'package:afritrad_mobile/features/invoices/presentation/pages/invoices_screen.dart';
+import 'package:afritrad_mobile/features/wallet/presentation/pages/withdrawal_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:afritrad_mobile/features/auth/data/kyc_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -216,8 +218,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
-                  SizedBox(height: 24),
+                   _buildHeader(),
+                   SizedBox(height: 16),
+                   _buildVerificationBanner(),
+                   SizedBox(height: 24),
                   _buildBannerCarousel(),
                   SizedBox(height: 24),
                   ValueListenableBuilder<List<Map<String, dynamic>>>(
@@ -251,6 +255,69 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   _buildMarketRates(),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerificationBanner() {
+    final kycProvider = Provider.of<KYCProvider>(context);
+    if (kycProvider.isVerified) return SizedBox.shrink();
+
+    return FadeInDown(
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.amber.withOpacity(0.2), AppColors.accent.withOpacity(0.2)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.amber.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.info_outline_rounded, color: AppColors.amber, size: 24),
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Verification Required",
+                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  Text(
+                    "Complete your KYB to unlock all features.",
+                    style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Navigate to KYC/KYB flow
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Redirecting to verification flow..."))
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.amber,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                elevation: 0,
+              ),
+              child: Text("Verify", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -544,39 +611,52 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       {'icon': Iconsax.bill, 'label': 'Bills', 'color': Colors.purple, 'page': null, 'action': () => _showBillsDialog()},
     ];
 
+    final kycProvider = Provider.of<KYCProvider>(context, listen: false);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: actions.map((action) {
+        bool isRestricted = !kycProvider.isVerified && (action['label'] == 'Swap' || action['label'] == 'Send');
+        
         return GestureDetector(
-          onTap: () {
+          onTap: isRestricted ? () {
+             ScaffoldMessenger.of(context).showSnackBar(
+               SnackBar(
+                 content: Text("Please complete verification to use ${action['label']}"),
+                 backgroundColor: AppColors.amber,
+               )
+             );
+          } : () {
             if (action['action'] != null) {
               (action['action'] as VoidCallback)();
             } else if (action['page'] != null) {
               Navigator.push(context, MaterialPageRoute(builder: (_) => action['page'] as Widget));
             }
           },
-          child: Column(
-            children: [
-              Container(
-                height: 56,
-                width: 56,
-                decoration: BoxDecoration(
-                  color: (action['color'] as Color).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: (action['color'] as Color).withOpacity(0.2)),
+          child: Opacity(
+            opacity: isRestricted ? 0.5 : 1.0,
+            child: Column(
+              children: [
+                Container(
+                  height: 56,
+                  width: 56,
+                  decoration: BoxDecoration(
+                    color: (action['color'] as Color).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: (action['color'] as Color).withOpacity(0.2)),
+                  ),
+                  child: Icon(action['icon'] as IconData, color: action['color'] as Color),
                 ),
-                child: Icon(action['icon'] as IconData, color: action['color'] as Color),
-              ),
-              SizedBox(height: 8),
-              Text(
-                action['label'] as String,
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                SizedBox(height: 8),
+                Text(
+                  action['label'] as String,
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       }).toList(),

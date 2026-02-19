@@ -2,20 +2,16 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/constants/api_config.dart';
 
 class SettlementService {
-  // Use the admin/laravel backend URL.
-  // Must match AnchorService's base logic for consistency
-  static const String _backendUrl = 'https://admin.afritradepay.com/api'; 
+  // Use the central API config
+  static const String _backendUrl = AppApiConfig.baseUrl; 
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token') ?? '';
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    final token = prefs.getString('auth_token');
+    return AppApiConfig.getHeaders(token);
   }
 
   Future<Map<String, dynamic>> paySupplier({

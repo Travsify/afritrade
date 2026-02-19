@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/constants/api_config.dart';
 
 class SupportAssistantScreen extends StatefulWidget {
   const SupportAssistantScreen({super.key});
@@ -22,8 +23,8 @@ class _SupportAssistantScreenState extends State<SupportAssistantScreen> {
   bool _isTyping = false;
   Timer? _pollingTimer;
 
-  // Production URL for Hostinger
-  static const String _baseUrl = 'https://admin.afritradepay.com/api/support_chat.php';
+  // Production URL
+  static const String _baseUrl = AppApiConfig.supportChat;
   
   String? _sessionId;
   bool _isInit = false;

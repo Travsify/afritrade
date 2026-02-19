@@ -1,0 +1,118 @@
+﻿Resolving dependencies...
+Downloading packages...
+  _flutterfire_internals 1.3.65 (1.3.66 available)
+  animate_do 3.3.9 (4.2.0 available)
+  archive 4.0.7 (4.0.9 available)
+  characters 1.4.0 (1.4.1 available)
+  code_assets 0.19.10 (1.0.0 available)
+  cross_file 0.3.5+1 (0.3.5+2 available)
+  dbus 0.7.11 (0.7.12 available)
+  ffi 2.1.5 (2.2.0 available)
+  firebase_core 4.3.0 (4.4.0 available)
+  firebase_core_web 3.3.1 (3.4.0 available)
+  firebase_messaging 16.1.0 (16.1.1 available)
+  firebase_messaging_platform_interface 4.7.5 (4.7.6 available)
+  firebase_messaging_web 4.1.1 (4.1.2 available)
+  fl_chart 0.66.2 (1.1.1 available)
+  flutter_launcher_icons 0.13.1 (0.14.4 available)
+  flutter_local_notifications 19.5.0 (20.1.0 available)
+  flutter_local_notifications_linux 6.0.0 (7.0.0 available)
+  flutter_local_notifications_platform_interface 9.1.0 (10.0.0 available)
+  flutter_local_notifications_windows 1.0.3 (2.0.1 available)
+  google_fonts 6.3.3 (8.0.1 available)
+  hooks 0.20.5 (1.0.1 available)
+  image_picker_android 0.8.13+10 (0.8.13+13 available)
+  image_picker_ios 0.8.13+3 (0.8.13+6 available)
+  json_annotation 4.9.0 (4.10.0 available)
+  lints 6.0.0 (6.1.0 available)
+  local_auth 2.3.0 (3.0.0 available)
+  local_auth_android 1.0.56 (2.0.4 available)
+  local_auth_darwin 1.6.1 (2.0.2 available)
+  local_auth_windows 1.0.11 (2.0.1 available)
+  matcher 0.12.17 (0.12.18 available)
+  material_color_utilities 0.11.1 (0.13.0 available)
+  meta 1.17.0 (1.18.1 available)
+  mime 1.0.6 (2.0.0 available)
+  native_toolchain_c 0.17.2 (0.17.4 available)
+  objective_c 9.2.2 (9.3.0 available)
+  petitparser 7.0.1 (7.0.2 available)
+  share_plus 7.2.2 (12.0.1 available)
+  share_plus_platform_interface 3.4.0 (6.1.0 available)
+  shared_preferences_android 2.4.18 (2.4.20 available)
+  smooth_page_indicator 1.2.1 (2.0.1 available)
+  source_span 1.10.1 (1.10.2 available)
+  test_api 0.7.7 (0.7.9 available)
+  timezone 0.10.1 (0.11.0 available)
+  url_launcher_ios 6.3.6 (6.4.1 available)
+  vector_graphics_compiler 1.1.19 (1.1.20 available)
+Got dependencies!
+45 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Running Gradle task 'assembleRelease'...                        
+flutter : lib/core/service
+s/anchor_service.dart:549:
+11: Error: Can't find '}' 
+to match '{'.
+At line:1 char:16
++ flutter clean; flutter 
+build apk --release > 
+build_log_2.txt 2>&1
++                ~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (l  
+  ib/core/servic...' to   
+  match '{'.:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+      try {
+          ^
+lib/core/services/anchor_s
+ervice.dart:549:7: Error: 
+A try block must be 
+followed by an 'on', 
+'catch', or 'finally' 
+clause.
+Try adding either a catch 
+or finally clause, or 
+remove the try statement.
+      try {
+      ^^^
+Target 
+kernel_snapshot_program 
+failed: Exception
+
+
+FAILURE: Build failed 
+with an exception.
+
+* What went wrong:
+Execution failed for task 
+':app:compileFlutterBuildR
+elease'.
+> Process 'command 'C:\Flu
+tterVersions\flutter\bin\f
+lutter.bat'' finished 
+with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace 
+option to get the stack 
+trace.
+> Run with --info or 
+--debug option to get 
+more log output.
+> Run with --scan to get 
+full insights.
+> Get more help at 
+https://help.gradle.org.
+
+BUILD FAILED in 17s
+Running Gradle task 'assembleRelease'...                           17.4s
+Gradle task 
+assembleRelease failed 
+with exit code 1

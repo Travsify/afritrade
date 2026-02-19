@@ -8,8 +8,19 @@ import 'package:afritrad_mobile/core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Requires google-services.json
-  await NotificationService().init();
+
+  // Robust initialization to prevent blank screen hangs
+  try {
+    await Firebase.initializeApp(); // Requires google-services.json
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
+
+  try {
+    await NotificationService().init();
+  } catch (e) {
+    debugPrint("Notification initialization failed: $e");
+  }
   
   runApp(
     MultiProvider(

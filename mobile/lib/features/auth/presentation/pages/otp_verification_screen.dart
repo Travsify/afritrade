@@ -4,8 +4,15 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import 'identity_info_screen.dart';
+import 'package:afritrad_mobile/core/theme/app_colors.dart';
+import 'package:afritrad_mobile/features/auth/presentation/pages/identity_info_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:afritrad_mobile/core/constants/api_config.dart';
+import 'package:afritrad_mobile/features/auth/data/kyc_provider.dart';
+import 'auth_wrapper.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
@@ -94,32 +101,59 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     super.dispose();
   }
 
-  void _verifyOTP() {
+  Future<void> _verifyOTP() async {
     String otp = _controllers.map((e) => e.text).join();
     if (otp.length < 4) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    // Simulate OTP verification
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => IdentityInfoScreen(
-              email: widget.email,
-              phone: widget.phone,
-              password: widget.password,
-            ),
-          ),
-        );
+    try {
+      final response = await http.post(
+        Uri.parse(AppApiConfig.baseUrl + "/verify-otp"),
+        body: jsonEncode({
+          'email': widget.email,
+          'otp': otp,
+        }),
+        headers: AppApiConfig.getHeaders(null),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['status'] == 'success') {
+         final prefs = await SharedPreferences.getInstance();
+         final user = data['user'];
+         
+         await prefs.setString('user_id', user['id'].toString());
+         await prefs.setString('user_name', user['name'] ?? "");
+         await prefs.setString('user_email', user['email']);
+         if (data['token'] != null) {
+            await prefs.setString('auth_token', data['token']);
+         }
+         await prefs.setBool('is_logged_in', true);
+
+         if (mounted) {
+            context.read<KYCProvider>().setLoggedIn(true);
+            
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AuthWrapper()),
+              (route) => false,
+            );
+         }
+      } else {
+        _showError(data['message'] ?? "Verification failed");
       }
-    });
+    } catch (e) {
+      _showError("Connection error. Please try again.");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   @override
@@ -159,7 +193,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: Colors.blue.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                           ),

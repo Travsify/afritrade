@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/constants/api_config.dart';
 
 class KycVerificationScreen extends StatefulWidget {
   const KycVerificationScreen({super.key});
@@ -42,7 +43,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('https://admin.afritradepay.com/api/kyc_status'),
+        Uri.parse(AppApiConfig.kycStatus),
         headers: headers,
       );
 
@@ -181,7 +182,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
       
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('https://admin.afritradepay.com/api/kyc/submit'),
+        Uri.parse(AppApiConfig.kycVerify), // Using kycVerify for submission
       );
       
       request.headers.addAll(headers);

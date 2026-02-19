@@ -3,6 +3,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../core/constants/api_config.dart';
 
 class SecurityService {
   static final SecurityService _instance = SecurityService._internal();
@@ -10,7 +11,6 @@ class SecurityService {
   SecurityService._internal();
 
   final LocalAuthentication auth = LocalAuthentication();
-  final String _baseUrl = 'https://admin.afritradepay.com/api/security.php';
 
   Future<bool> canCheckBiometrics() async {
     try {
@@ -35,15 +35,17 @@ class SecurityService {
     }
   }
 
+  Future<Map<String, String>> _getHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    return AppApiConfig.getHeaders(token);
+  }
+
   Future<Map<String, dynamic>> checkPinStatus() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      if (userId == null) return {'is_pin_set': false};
-
-      final response = await http.post(
-        Uri.parse('$_baseUrl?action=check_status'),
-        body: {'user_id': userId},
+      final response = await http.get(
+        Uri.parse(AppApiConfig.pinStatus),
+        headers: await _getHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -57,13 +59,10 @@ class SecurityService {
 
   Future<Map<String, dynamic>> verifyPin(String pin) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      if (userId == null) return {'status': 'error', 'message': 'User not logged in'};
-
       final response = await http.post(
-        Uri.parse('$_baseUrl?action=verify_pin'),
-        body: {'user_id': userId, 'pin': pin},
+        Uri.parse(AppApiConfig.pinVerify),
+        headers: await _getHeaders(),
+        body: jsonEncode({'pin': pin}),
       );
 
       if (response.statusCode == 200) {
@@ -77,13 +76,10 @@ class SecurityService {
 
   Future<Map<String, dynamic>> setPin(String pin) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      if (userId == null) return {'status': 'error', 'message': 'User not logged in'};
-
       final response = await http.post(
-        Uri.parse('$_baseUrl?action=set_pin'),
-        body: {'user_id': userId, 'pin': pin},
+        Uri.parse(AppApiConfig.pinSet),
+        headers: await _getHeaders(),
+        body: jsonEncode({'pin': pin}),
       );
 
       if (response.statusCode == 200) {
@@ -92,6 +88,6 @@ class SecurityService {
     } catch (e) {
       debugPrint("Set PIN Error: $e");
     }
-    return {'status': 'error', 'message': 'Network error'};
+    return {'status' : 'error', 'message': 'Network error'};
   }
 }

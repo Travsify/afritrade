@@ -4,6 +4,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import '../../core/constants/api_config.dart';
 
 // Top-level background handler
 @pragma('vm:entry-point')
@@ -114,12 +117,13 @@ class NotificationService {
   Future<void> _saveTokenToBackend(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      if (userId != null) {
+      final authToken = prefs.getString('auth_token');
+      if (authToken != null) {
         // Send to backend
         await http.post(
-           Uri.parse('https://admin.afritradepay.com/api/update_fcm_token.php'), // We'll create this
-           body: {'user_id': userId, 'token': token}
+           Uri.parse(AppApiConfig.fcmToken),
+           headers: AppApiConfig.getHeaders(authToken),
+           body: jsonEncode({'token': token})
         );
         debugPrint("Token sent to backend");
       }

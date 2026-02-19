@@ -2,19 +2,16 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/constants/api_config.dart';
 
 class InvoiceService {
-  static const String _backendUrl = 'https://admin.afritradepay.com/api';
-
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token') ?? '';
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    final token = prefs.getString('auth_token');
+    return AppApiConfig.getHeaders(token);
   }
+
+  static const String _backendUrl = AppApiConfig.baseUrl;
 
   /// Get all invoices (sent + received)
   Future<List<Map<String, dynamic>>> getInvoices({String type = 'all'}) async {

@@ -173,7 +173,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       if (_currentPage == _pages.length - 1) {
                         // Mark onboarding as completed
                         final prefs = await SharedPreferences.getInstance();

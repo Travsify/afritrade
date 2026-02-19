@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:afritrad_mobile/core/constants/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/constants/api_config.dart';
 import '../../../../core/services/anchor_service.dart';
 import '../../../auth/presentation/widgets/pin_verification_modal.dart';
 import 'withdrawal_history_screen.dart';
@@ -117,7 +119,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     try {
       final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('https://admin.afritradepay.com/api/withdraw'),
+        Uri.parse(AppApiConfig.withdraw),
         headers: headers,
         body: jsonEncode({
           'amount': amount,

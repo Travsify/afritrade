@@ -12,15 +12,12 @@ class AuthApiController extends Controller
 {
     public function register(Request $request)
     {
-        // Legacy: "status" => "error", "message" => "..."
-        // Laravel validation errors are usually 422, but we'll try to catch them or let standard behavior apply 
-        // and mobile app should handle 422. However, legacy app expects 200 OK with "status": "error".
-        // For compatibility, we might need manual validation or exception handling.
-        
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
+            'country' => 'required|string',
+            'business_name' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -30,22 +27,75 @@ class AuthApiController extends Controller
             ]);
         }
 
+        $otp = rand(1000, 9999);
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'country' => $request->country,
+            'business_name' => $request->business_name,
+            'otp_code' => $otp,
+            'otp_expires_at' => now()->addMinutes(15),
+            'is_otp_verified' => false,
+            'kyb_status' => 'none',
         ]);
 
-        // Legacy register.php checks email first. Unique validation handles that.
-        // Legacy output: status, message, user object.
+        // In production, we'd send an email here.
+        \Illuminate\Support\Facades\Log::info("OTP for {$user->email}: {$otp}");
+
         return response()->json([
             'status' => 'success',
-            'message' => 'Account created',
+            'message' => 'Account created. Please verify OTP.',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                // 'role' => 'user' // Legacy didn't have role in Register response but had it in Login. 
+                'otp_debug' => $otp // For MVP/Demo purposes
+            ]
+        ]);
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string|length:4',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || $user->otp_code !== $request->otp) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid OTP code'
+            ], 400);
+        }
+
+        if ($user->otp_expires_at && $user->otp_expires_at->isPast()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'OTP has expired'
+            ], 400);
+        }
+
+        $user->update([
+            'is_otp_verified' => true,
+            'otp_code' => null,
+            'otp_expires_at' => null,
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'OTP verified successfully',
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'is_verified' => $user->is_kyc_verified
             ]
         ]);
     }
@@ -56,24 +106,29 @@ class AuthApiController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
+            
+            // Check if OTP verified
+            if (!$user->is_otp_verified) {
+                 // Regenerate OTP if needed? For now, just tell them to verify
+                 return response()->json([
+                    'status' => 'error',
+                    'message' => 'Email not verified. Please verify OTP.',
+                    'requires_otp' => true,
+                    'email' => $user->email
+                ], 403);
+            }
+
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Legacy Login Output: status, user object.
-            // We append 'token' because Sanctum needs it for subsequent requests.
-            // The mobile app MUST be updated to use this token for Bearer auth in headers because 
-            // legacy was likely session-based or minimal? 
-            // *Wait*, legacy login.php didn't return a token. It just returned User.
-            // How does the app authenticate future requests? 
-            // If the legacy app was just using the User ID or simple storage, migration to Laravel 
-            // implies we SHOULD provide a token. I'll include it.
-            
             return response()->json([
                 'status' => 'success',
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => 'user', // Defaulting to user as column might not exist or be different
+                    'role' => 'user',
+                    'is_verified' => $user->is_kyc_verified || ($user->verification_status === 'verified'),
+                    'kyb_status' => $user->kyb_status
                 ],
                 'token' => $token
             ]);

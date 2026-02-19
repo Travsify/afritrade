@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:afritrad_mobile/core/constants/api_config.dart';
 
 class AnchorService {
   static final AnchorService _instance = AnchorService._internal();
@@ -168,16 +169,12 @@ class AnchorService {
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token') ?? '';
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    final token = prefs.getString('auth_token');
+    return AppApiConfig.getHeaders(token);
   }
 
-  // Use the admin/laravel backend URL
-  static const String _backendUrl = 'https://admin.afritradepay.com/api'; 
+  // Use the central API config
+  static const String _backendUrl = AppApiConfig.baseUrl; 
 
   Future<Map<String, dynamic>> getCryptoFundingAddress() async {
     try {
@@ -352,7 +349,10 @@ class AnchorService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('user_id');
       if (userId != null) {
-        final response = await http.get(Uri.parse('$_backendUrl/cards.php?user_id=$userId'));
+        final response = await http.get(
+          Uri.parse(AppApiConfig.cards),
+          headers: await _getHeaders(),
+        );
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           if (data['status'] == 'success') {
@@ -447,7 +447,10 @@ class AnchorService {
   
   Future<void> _fetchRates() async {
     try {
-      final response = await http.get(Uri.parse('$_backendUrl/rates.php'));
+      final response = await http.get(
+        Uri.parse(AppApiConfig.rates),
+        headers: await _getHeaders(),
+      );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success' && data['rates'] != null) {
@@ -478,7 +481,7 @@ class AnchorService {
       }
 
       final response = await http.post(
-        Uri.parse('$_backendUrl/wallet_swap.php'),
+        Uri.parse(AppApiConfig.walletSwap),
         headers: await _getHeaders(),
         body: jsonEncode({
           'user_id': userId,
@@ -523,7 +526,7 @@ class AnchorService {
       
       if (userId != null) {
         final response = await http.get(
-          Uri.parse('$_backendUrl/transactions.php?user_id=$userId'),
+          Uri.parse(AppApiConfig.transactions),
           headers: await _getHeaders(),
         );
 
@@ -542,19 +545,22 @@ class AnchorService {
 
   // ============ MARKET RATES DASHBOARD ============
   Future<List<Map<String, dynamic>>> getMarketRates() async {
-     try {
-       final response = await http.get(Uri.parse('$_backendUrl/rates.php'));
-       if (response.statusCode == 200) {
-         final data = jsonDecode(response.body);
-         if (data['status'] == 'success' && data['market'] != null) {
-           return List<Map<String, dynamic>>.from(data['market']);
-         }
-       }
-     } catch (e) {
-        debugPrint("Market Rates Error: $e");
-     }
-     // Fallback to empty or cache
-     return [];
+    try {
+      final response = await http.get(
+        Uri.parse(AppApiConfig.rates),
+        headers: await _getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success' && data['market'] != null) {
+          return List<Map<String, dynamic>>.from(data['market']);
+        }
+      }
+    } catch (e) {
+      debugPrint("Market Rates Error: $e");
+    }
+    // Fallback to empty or cache
+    return [];
   }
 
   // ============ BILLS ============
@@ -598,9 +604,9 @@ class AnchorService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('user_id') ?? '1';
       
-      final response = await http.post(
-        Uri.parse('https://admin.afritradepay.com/api/rate_alerts.php'),
-        body: {'user_id': userId},
+      final response = await http.get(
+        Uri.parse(AppApiConfig.kycStatus),
+        headers: await _getHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -731,7 +737,10 @@ class AnchorService {
   // Check Status
   Future<Map<String, dynamic>> checkKYCStatus(String userId) async {
     try {
-      final response = await http.get(Uri.parse('https://admin.afritradepay.com/api/kyc_status.php?user_id=$userId'));
+      final response = await http.get(
+        Uri.parse(AppApiConfig.kycStatus),
+        headers: await _getHeaders(),
+      );
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -748,7 +757,8 @@ class AnchorService {
     required String filePath,
   }) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse('https://admin.afritradepay.com/api/kyc_upload.php'));
+      var request = http.MultipartRequest('POST', Uri.parse(AppApiConfig.kycUpload));
+      request.headers.addAll(await _getHeaders());
       request.fields['user_id'] = userId;
       request.fields['document_type'] = docType;
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
@@ -781,7 +791,10 @@ class AnchorService {
   // ============ BANNERS (CMS) ============
   Future<List<Map<String, dynamic>>> getBanners() async {
     try {
-      final response = await http.get(Uri.parse('https://admin.afritradepay.com/api/banners.php'));
+      final response = await http.get(
+        Uri.parse(AppApiConfig.baseUrl + '/banners'), // Use baseUrl + endpoint or add to AppApiConfig
+        headers: await _getHeaders(),
+      );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success') {
@@ -803,7 +816,10 @@ class AnchorService {
       // Assuming you store user_id in prefs login
       // userId = prefs.getString('user_id') ?? '1';
 
-      final response = await http.get(Uri.parse('https://admin.afritradepay.com/api/referrals.php?user_id=$userId'));
+      final response = await http.get(
+        Uri.parse(AppApiConfig.referrals),
+        headers: await _getHeaders(),
+      );
       
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -853,7 +869,8 @@ class AnchorService {
       final userId = prefs.getString('user_id') ?? '1';
       
       final response = await http.get(
-        Uri.parse('https://admin.afritradepay.com/api/user_info.php?user_id=$userId'),
+        Uri.parse(AppApiConfig.settings), // Use settings which likely contains info or limits
+        headers: await _getHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -875,9 +892,9 @@ class AnchorService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('user_id') ?? '1';
       
-      final response = await http.post(
-        Uri.parse('https://admin.afritradepay.com/api/security.php?action=check_status'),
-        body: {'user_id': userId},
+      final response = await http.get(
+        Uri.parse(AppApiConfig.pinStatus),
+        headers: await _getHeaders(),
       );
 
       if (response.statusCode == 200) {

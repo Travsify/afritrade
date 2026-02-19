@@ -1,0 +1,434 @@
+﻿Running Gradle task 'assembleRelease'...                        
+flutter : lib/core/se
+rvices/anchor_service
+.dart:549:11: Error: 
+Can't find '}' to 
+match '{'.
+At line:1 char:1
++ flutter build apk 
+--release > 
+build_log.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (lib/cor   
+ e/servic...' to     
+match '{'.:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+      try {
+          ^
+lib/core/services/not
+ification_service.dar
+t:125:18: Error: The 
+method 'jsonEncode' 
+isn't defined for 
+the type 'Notificatio
+nService'.
+ - 'NotificationServi
+ce' is from 'package:
+afritrad_mobile/core/
+services/notification
+_service.dart' ('lib/
+core/services/notific
+ation_service.dart').
+Try correcting the 
+name to the name of 
+an existing method, 
+or defining a method 
+named 'jsonEncode'.
+           body: 
+jsonEncode({'token': 
+token})
+                 
+^^^^^^^^^^
+lib/core/services/anc
+hor_service.dart:549:
+7: Error: A try 
+block must be 
+followed by an 'on', 
+'catch', or 
+'finally' clause.
+Try adding either a 
+catch or finally 
+clause, or remove 
+the try statement.
+      try {
+      ^^^
+lib/core/services/set
+tlement_service.dart:
+8:25: Error: The 
+getter 
+'SharedPreferences' 
+isn't defined for 
+the type 
+'SettlementService'.
+ - 
+'SettlementService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/settlement_servi
+ce.dart' ('lib/core/s
+ervices/settlement_se
+rvice.dart').
+Try correcting the 
+name to the name of 
+an existing getter, 
+or defining a getter 
+or field named 
+'SharedPreferences'.
+    final prefs = 
+await SharedPreferenc
+es.getInstance();
+                     
+   ^^^^^^^^^^^^^^^^^
+lib/core/services/set
+tlement_service.dart:
+21:30: Error: The 
+getter 'http' isn't 
+defined for the type 
+'SettlementService'.
+ - 
+'SettlementService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/settlement_servi
+ce.dart' ('lib/core/s
+ervices/settlement_se
+rvice.dart').
+Try correcting the 
+name to the name of 
+an existing getter, 
+or defining a getter 
+or field named 
+'http'.
+      final response 
+= await http.post(
+                     
+        ^^^^
+lib/core/services/set
+tlement_service.dart:
+24:15: Error: The 
+method 'jsonEncode' 
+isn't defined for 
+the type 
+'SettlementService'.
+ - 
+'SettlementService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/settlement_servi
+ce.dart' ('lib/core/s
+ervices/settlement_se
+rvice.dart').
+Try correcting the 
+name to the name of 
+an existing method, 
+or defining a method 
+named 'jsonEncode'.
+        body: 
+jsonEncode({
+              
+^^^^^^^^^^
+lib/core/services/set
+tlement_service.dart:
+32:20: Error: The 
+method 'jsonDecode' 
+isn't defined for 
+the type 
+'SettlementService'.
+ - 
+'SettlementService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/settlement_servi
+ce.dart' ('lib/core/s
+ervices/settlement_se
+rvice.dart').
+Try correcting the 
+name to the name of 
+an existing method, 
+or defining a method 
+named 'jsonDecode'.
+      final data = js
+onDecode(response.bod
+y);
+                   
+^^^^^^^^^^
+lib/core/services/set
+tlement_service.dart:
+43:7: Error: The 
+method 'debugPrint' 
+isn't defined for 
+the type 
+'SettlementService'.
+ - 
+'SettlementService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/settlement_servi
+ce.dart' ('lib/core/s
+ervices/settlement_se
+rvice.dart').
+Try correcting the 
+name to the name of 
+an existing method, 
+or defining a method 
+named 'debugPrint'.
+      debugPrint('Set
+tlement Error: $e');
+      ^^^^^^^^^^
+lib/core/services/inv
+oice_service.dart:5:2
+5: Error: The getter 
+'SharedPreferences' 
+isn't defined for 
+the type 
+'InvoiceService'.
+ - 'InvoiceService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/invoice_service.
+dart' ('lib/core/serv
+ices/invoice_service.
+dart').
+Try correcting the 
+name to the name of 
+an existing getter, 
+or defining a getter 
+or field named 
+'SharedPreferences'.
+    final prefs = 
+await SharedPreferenc
+es.getInstance();
+                     
+   ^^^^^^^^^^^^^^^^^
+lib/core/services/inv
+oice_service.dart:16:
+30: Error: The 
+getter 'http' isn't 
+defined for the type 
+'InvoiceService'.
+ - 'InvoiceService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/invoice_service.
+dart' ('lib/core/serv
+ices/invoice_service.
+dart').
+Try correcting the 
+name to the name of 
+an existing getter, 
+or defining a getter 
+or field named 
+'http'.
+      final response 
+= await http.get(
+                     
+        ^^^^
+lib/core/services/inv
+oice_service.dart:22:
+22: Error: The 
+method 'jsonDecode' 
+isn't defined for 
+the type 
+'InvoiceService'.
+ - 'InvoiceService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/invoice_service.
+dart' ('lib/core/serv
+ices/invoice_service.
+dart').
+Try correcting the 
+name to the name of 
+an existing method, 
+or defining a method 
+named 'jsonDecode'.
+        final data = 
+jsonDecode(response.b
+ody);
+                     
+^^^^^^^^^^
+lib/core/services/inv
+oice_service.dart:28:
+7: Error: The method 
+'debugPrint' isn't 
+defined for the type 
+'InvoiceService'.
+ - 'InvoiceService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/invoice_service.
+dart' ('lib/core/serv
+ices/invoice_service.
+dart').
+Try correcting the 
+name to the name of 
+an existing method, 
+or defining a method 
+named 'debugPrint'.
+      
+debugPrint('Invoice 
+Fetch Error: $e');
+      ^^^^^^^^^^
+lib/core/services/inv
+oice_service.dart:43:
+30: Error: The 
+getter 'http' isn't 
+defined for the type 
+'InvoiceService'.
+ - 'InvoiceService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/invoice_service.
+dart' ('lib/core/serv
+ices/invoice_service.
+dart').
+Try correcting the 
+name to the name of 
+an existing getter, 
+or defining a getter 
+or field named 
+'http'.
+      final response 
+= await http.post(
+                     
+        ^^^^
+lib/core/services/inv
+oice_service.dart:46:
+15: Error: The 
+method 'jsonEncode' 
+isn't defined for 
+the type 
+'InvoiceService'.
+ - 'InvoiceService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/invoice_service.
+dart' ('lib/core/serv
+ices/invoice_service.
+dart').
+Try correcting the 
+name to the name of 
+an existing method, 
+or defining a method 
+named 'jsonEncode'.
+        body: 
+jsonEncode({
+              
+^^^^^^^^^^
+lib/core/services/inv
+oice_service.dart:55:
+14: Error: The 
+method 'jsonDecode' 
+isn't defined for 
+the type 
+'InvoiceService'.
+ - 'InvoiceService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/invoice_service.
+dart' ('lib/core/serv
+ices/invoice_service.
+dart').
+Try correcting the 
+name to the name of 
+an existing method, 
+or defining a method 
+named 'jsonDecode'.
+      return jsonDeco
+de(response.body);
+             
+^^^^^^^^^^
+lib/core/services/inv
+oice_service.dart:65:
+30: Error: The 
+getter 'http' isn't 
+defined for the type 
+'InvoiceService'.
+ - 'InvoiceService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/invoice_service.
+dart' ('lib/core/serv
+ices/invoice_service.
+dart').
+Try correcting the 
+name to the name of 
+an existing getter, 
+or defining a getter 
+or field named 
+'http'.
+      final response 
+= await http.post(
+                     
+        ^^^^
+lib/core/services/inv
+oice_service.dart:70:
+14: Error: The 
+method 'jsonDecode' 
+isn't defined for 
+the type 
+'InvoiceService'.
+ - 'InvoiceService' 
+is from 'package:afri
+trad_mobile/core/serv
+ices/invoice_service.
+dart' ('lib/core/serv
+ices/invoice_service.
+dart').
+Try correcting the 
+name to the name of 
+an existing method, 
+or defining a method 
+named 'jsonDecode'.
+      return jsonDeco
+de(response.body);
+             
+^^^^^^^^^^
+Target kernel_snapsho
+t_program failed: 
+Exception
+
+
+FAILURE: Build 
+failed with an 
+exception.
+
+* What went wrong:
+Execution failed for 
+task ':app:compileFlu
+tterBuildRelease'.
+> Process 'command 'C
+:\FlutterVersions\flu
+tter\bin\flutter.bat'
+' finished with 
+non-zero exit value 1
+
+* Try:
+> Run with 
+--stacktrace option 
+to get the stack 
+trace.
+> Run with --info or 
+--debug option to 
+get more log output.
+> Run with --scan to 
+get full insights.
+> Get more help at ht
+tps://help.gradle.org
+.
+
+BUILD FAILED in 20s
+Running Gradle task 'assembleRelease'...                           20.4s
+Gradle task 
+assembleRelease 
+failed with exit 
+code 1

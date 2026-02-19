@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/virtual-accounts', [\App\Http\Controllers\Api\VirtualAccountApiController::class, 'store']);
 
     // Security (PIN)
+    Route::get('/security/pin/status', [\App\Http\Controllers\Api\SecurityApiController::class, 'checkPinStatus']);
     Route::post('/security/pin/set', [\App\Http\Controllers\Api\SecurityApiController::class, 'setPin']);
     Route::post('/security/pin/verify', [\App\Http\Controllers\Api\SecurityApiController::class, 'verifyPin']);
     Route::post('/security/pin/change', [\App\Http\Controllers\Api\SecurityApiController::class, 'changePin']);
@@ -76,12 +77,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\NotificationApiController::class, 'markAsRead']);
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Api\NotificationApiController::class, 'markAllAsRead']);
     Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\NotificationApiController::class, 'destroy']);
+    Route::post('/fcm/token', [\App\Http\Controllers\Api\NotificationApiController::class, 'updateFcmToken']);
 });
 
 Route::get('/banners', [\App\Http\Controllers\Api\GeneralApiController::class, 'banners']);
 
 Route::post('/register', [\App\Http\Controllers\Api\AuthApiController::class, 'register']);
 Route::post('/login', [\App\Http\Controllers\Api\AuthApiController::class, 'login']);
+Route::post('/verify-otp', [\App\Http\Controllers\Api\AuthApiController::class, 'verifyOtp']);
 
 Route::get('/settings', [\App\Http\Controllers\Api\SettingsApiController::class, 'index']);
 
