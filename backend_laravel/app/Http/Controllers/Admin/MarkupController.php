@@ -31,6 +31,8 @@ class MarkupController extends Controller
             'updated_at' => now(),
         ]);
 
+        \App\Services\AuditLogger::log("Updated Markup ID: {$id}", "Type: {$request->fee_type}, Active: {$request->is_active}");
+
         return back()->with('success', 'Markup updated successfully.');
     }
 }

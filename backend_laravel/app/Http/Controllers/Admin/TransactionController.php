@@ -52,6 +52,8 @@ class TransactionController extends Controller
 
         $transaction->update(['status' => $request->status]);
 
+        \App\Services\AuditLogger::log("Updated Transaction #{$transaction->id}", "Status changed to {$request->status}");
+
         return back()->with('success', 'Transaction status updated.');
     }
     

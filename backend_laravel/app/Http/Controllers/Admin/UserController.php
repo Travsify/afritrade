@@ -57,6 +57,8 @@ class UserController extends Controller
 
         $user->update($request->only('name', 'email', 'kyc_tier', 'verification_status'));
 
+        \App\Services\AuditLogger::log("Updated User Profile #{$user->id}", "Modified KYC Tier to {$request->kyc_tier} and Status to {$request->verification_status}");
+
         return back()->with('success', 'User profile updated successfully.');
     }
 

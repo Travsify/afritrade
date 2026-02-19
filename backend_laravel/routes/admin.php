@@ -6,7 +6,9 @@ use App\Http\Controllers\Admin\DashboardController;
 
 // Auth Routes
 Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('login', [AuthController::class, 'login'])->name('login.submit');
+Route::post('login', [AuthController::class, 'login'])
+    ->middleware('throttle:10,1')
+    ->name('login.submit');
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected Routes
