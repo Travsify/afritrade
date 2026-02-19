@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:animate_do/animate_do.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
@@ -48,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   final _anchorService = AnchorService();
   Map<String, dynamic>? _selectedAccount;
   bool _isLoadingAccounts = true;
+  String _userName = 'Afritrad User';
 
   @override
   void initState() {
@@ -57,6 +59,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       duration: Duration(seconds: 2),
     )..repeat(reverse: true);
     _fetchAccounts();
+    _loadUserName();
+  }
+
+  void _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('user_name');
+    if (name != null && name.isNotEmpty && mounted) {
+      setState(() => _userName = name);
+    }
   }
 
   void _fetchAccounts() async {
@@ -341,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             SizedBox(height: 4),
             Text(
-              "Afritrad User",
+              _userName,
               style: GoogleFonts.outfit(
                 color: Colors.white,
                 fontSize: 20,

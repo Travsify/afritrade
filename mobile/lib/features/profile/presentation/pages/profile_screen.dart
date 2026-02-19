@@ -1,9 +1,14 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:afritrad_mobile/core/constants/api_config.dart';
+import 'package:afritrad_mobile/features/auth/presentation/pages/login_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/data/kyc_provider.dart';
@@ -22,6 +27,25 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
+  String _userName = 'Afritrade Merchant';
+  String _userEmail = 'merchant@afritrade.com';
+  bool _isLoggingOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  void _loadUserInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _userName = prefs.getString('user_name') ?? 'Afritrade Merchant';
+        _userEmail = prefs.getString('user_email') ?? 'merchant@afritrade.com';
+      });
+    }
+  }
 
   Future<void> _pickImage(KYCProvider provider) async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -155,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 FadeInUp(
                   child: Text(
-                    "Afritrade Merchant",
+                    _userName,
                     style: GoogleFonts.outfit(
                       color: Colors.white,
                       fontSize: 24,
@@ -166,7 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 FadeInUp(
                   delay: const Duration(milliseconds: 100),
                   child: Text(
-                    "merchant@afritrade.com",
+                    _userEmail,
                     style: GoogleFonts.outfit(
                       color: AppColors.textSecondary,
                       fontSize: 14,
@@ -897,21 +921,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildLogoutButton(KYCProvider kyc) {
     return Center(
-      child: TextButton(
-        onPressed: () {
-          kyc.setLoggedIn(false);
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        },
-        child: Text(
-          "Sign Out Safely",
-          style: GoogleFonts.outfit(
-            color: AppColors.error,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      child: _isLoggingOut
+          ? const CircularProgressIndicator(color: AppColors.error)
+          : TextButton(
+              onPressed: () => _performLogout(kyc),
+              child: Text(
+                "Sign Out Safely",
+                style: GoogleFonts.outfit(
+                  color: AppColors.error,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
     );
+  }
+
+  Future<void> _performLogout(KYCProvider kyc) async {
+    setState(() => _isLoggingOut = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token != null) {
+        await http.post(
+          Uri.parse(AppApiConfig.logout),
+          headers: AppApiConfig.getHeaders(token),
+        ).timeout(const Duration(seconds: 5));
+      }
+    } catch (_) {}
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('user_id');
+    await prefs.remove('user_name');
+    await prefs.remove('user_email');
+    await prefs.remove('user_pin');
+
+    kyc.setLoggedIn(false);
+
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
   Widget _buildVersionInfo() {

@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->alias([
             'limit' => \App\Http\Middleware\CheckTransactionLimit::class,
+            'verify.pin' => \App\Http\Middleware\VerifyTransactionPin::class,
         ]);
         $middleware->redirectGuestsTo(fn () => route('admin.login'));
     })

@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class AuthApiController extends Controller
 {
     public function register(Request $request)
     {
-        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
@@ -41,8 +44,8 @@ class AuthApiController extends Controller
             'kyb_status' => 'none',
         ]);
 
-        // In production, we'd send an email here.
-        \Illuminate\Support\Facades\Log::info("OTP for {$user->email}: {$otp}");
+        // Send OTP via email in production
+        Log::info("OTP for {$user->email}: {$otp}");
 
         return response()->json([
             'status' => 'success',
@@ -51,7 +54,7 @@ class AuthApiController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'otp_debug' => $otp // For MVP/Demo purposes
+                'otp_debug' => $otp // Remove in production
             ]
         ]);
     }
@@ -60,7 +63,7 @@ class AuthApiController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'otp' => 'required|string|length:4',
+            'otp' => 'required|string',
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -107,10 +110,8 @@ class AuthApiController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             
-            // Check if OTP verified
             if (!$user->is_otp_verified) {
-                 // Regenerate OTP if needed? For now, just tell them to verify
-                 return response()->json([
+                return response()->json([
                     'status' => 'error',
                     'message' => 'Email not verified. Please verify OTP.',
                     'requires_otp' => true,
@@ -120,6 +121,14 @@ class AuthApiController extends Controller
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
+            // Send login security alert
+            try {
+                $notifService = app(NotificationService::class);
+                $notifService->loginAlert($user->id, $request->ip());
+            } catch (\Exception $e) {
+                Log::debug('Login alert failed: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'status' => 'success',
                 'user' => [
@@ -127,8 +136,11 @@ class AuthApiController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => 'user',
+                    'country' => $user->country,
+                    'business_name' => $user->business_name,
                     'is_verified' => $user->is_kyc_verified || ($user->verification_status === 'verified'),
-                    'kyb_status' => $user->kyb_status
+                    'kyb_status' => $user->kyb_status,
+                    'has_pin' => !empty($user->transaction_pin),
                 ],
                 'token' => $token
             ]);
@@ -137,6 +149,79 @@ class AuthApiController extends Controller
         return response()->json([
             'status' => 'error',
             'message' => 'Invalid credentials'
+        ]);
+    }
+
+    /**
+     * Get authenticated user's full profile.
+     */
+    public function profile()
+    {
+        $user = Auth::user();
+        $wallets = $user->wallets;
+        $totalBalance = $wallets->sum('balance');
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'country' => $user->country,
+                'business_name' => $user->business_name,
+                'kyb_status' => $user->kyb_status,
+                'verification_status' => $user->verification_status,
+                'kyc_tier' => $user->kyc_tier,
+                'has_pin' => !empty($user->transaction_pin),
+                'total_balance' => $totalBalance,
+                'wallets_count' => $wallets->count(),
+                'created_at' => $user->created_at->toISOString(),
+            ]
+        ]);
+    }
+
+    /**
+     * Update user profile.
+     */
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'business_name' => 'sometimes|string|max:255',
+            'country' => 'sometimes|string|max:100',
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $user->update($request->only(['name', 'business_name', 'country']));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'country' => $user->country,
+                'business_name' => $user->business_name,
+            ]
+        ]);
+    }
+
+    /**
+     * Logout — revoke current token.
+     */
+    public function logout(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        
+        // Revoke the current access token
+        $user->currentAccessToken()->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Logged out successfully'
         ]);
     }
 }

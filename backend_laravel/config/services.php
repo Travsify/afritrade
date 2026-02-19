@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    'flutterwave' => [
+        'secret_key' => env('FLUTTERWAVE_SECRET_KEY'),
+        'public_key' => env('FLUTTERWAVE_PUBLIC_KEY'),
+        'webhook_hash' => env('FLUTTERWAVE_WEBHOOK_HASH'),
+    ],
+
+    'firebase' => [
+        'server_key' => env('FIREBASE_SERVER_KEY'),
+    ],
+
+    'fincra' => [
+        'business_id' => env('FINCRA_BUSINESS_ID'),
+        'secret_key' => env('FINCRA_SECRET_KEY'),
+    ],
+
 ];

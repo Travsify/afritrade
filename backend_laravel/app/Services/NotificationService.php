@@ -4,21 +4,28 @@ namespace App\Services;
 
 use App\Models\Notification;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
     /**
-     * Send notification to a user
+     * Send notification to a user (DB + Push)
      */
     public function send(int $userId, string $type, string $title, string $message, array $data = [])
     {
-        return Notification::create([
+        $notification = Notification::create([
             'user_id' => $userId,
             'type' => $type,
             'title' => $title,
             'message' => $message,
             'data' => $data
         ]);
+
+        // Send FCM push notification
+        $this->sendPushNotification($userId, $title, $message, $data);
+
+        return $notification;
     }
 
     /**
@@ -40,6 +47,11 @@ class NotificationService
             ];
         }
         Notification::insert($notifications);
+
+        // Send push to all
+        foreach ($userIds as $userId) {
+            $this->sendPushNotification($userId, $title, $message, $data);
+        }
     }
 
     /**
@@ -51,7 +63,53 @@ class NotificationService
         $this->sendToMany($userIds, $type, $title, $message, $data);
     }
 
-    // Convenience methods for common notification types
+    /**
+     * Send FCM Push Notification via HTTP v1 API
+     */
+    protected function sendPushNotification(int $userId, string $title, string $body, array $data = []): void
+    {
+        try {
+            $user = User::find($userId);
+            if (!$user || empty($user->fcm_token)) return;
+
+            $serverKey = config('services.firebase.server_key');
+            if (empty($serverKey)) {
+                Log::debug('FCM server key not configured, skipping push notification');
+                return;
+            }
+
+            $payload = [
+                'to' => $user->fcm_token,
+                'notification' => [
+                    'title' => $title,
+                    'body' => $body,
+                    'sound' => 'default',
+                ],
+                'data' => array_merge($data, [
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    'type' => $data['action'] ?? 'general',
+                ]),
+                'priority' => 'high',
+            ];
+
+            $response = Http::withHeaders([
+                'Authorization' => 'key=' . $serverKey,
+                'Content-Type' => 'application/json',
+            ])->post('https://fcm.googleapis.com/fcm/send', $payload);
+
+            if ($response->failed()) {
+                Log::warning('FCM push failed', [
+                    'user_id' => $userId,
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('FCM push exception: ' . $e->getMessage());
+        }
+    }
+
+    // ─── Convenience Methods ───
 
     public function transactionCredit($userId, $amount, $currency, $reference)
     {
@@ -104,8 +162,16 @@ class NotificationService
     public function withdrawalComplete($userId, $amount, $reference)
     {
         return $this->send($userId, 'transaction', 'Withdrawal Complete', 
-            "Your withdrawal of ₦{$amount} has been processed. Ref: {$reference}", 
+            "Your withdrawal of {$amount} has been processed. Ref: {$reference}", 
             ['amount' => $amount, 'reference' => $reference]
+        );
+    }
+
+    public function loginAlert($userId, $ip)
+    {
+        return $this->send($userId, 'security', 'New Login Detected',
+            "A new login was detected from IP: {$ip}. If this wasn't you, please secure your account immediately.",
+            ['ip' => $ip, 'action' => 'login']
         );
     }
 }
