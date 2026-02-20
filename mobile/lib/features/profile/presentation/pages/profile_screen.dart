@@ -41,8 +41,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
-        _userName = prefs.getString('user_name') ?? 'Afritrade Merchant';
-        _userEmail = prefs.getString('user_email') ?? 'merchant@afritrade.com';
+        _userName = prefs.getString('user_name') ?? 'Afritrade User';
+        _userEmail = prefs.getString('user_email') ?? 'user@afritrade.com';
+      });
+      // Fetch fresh data from backend
+      Provider.of<KYCProvider>(context, listen: false).fetchProfile().then((_) {
+        // Update local UI name/email if they changed
+        if (mounted) {
+          setState(() {
+            _userName = prefs.getString('user_name') ?? _userName;
+            _userEmail = prefs.getString('user_email') ?? _userEmail;
+          });
+        }
       });
     }
   }
@@ -627,18 +637,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Icons.history_toggle_off, 
           "Security Audit Log", 
           "Recent activity and devices", 
-          () => _showSecurityAuditLog(),
+          () => _showSecurityAuditLog(kyc),
         ),
       ],
     );
   }
 
-  void _showSecurityAuditLog() {
+  void _showSecurityAuditLog(KYCProvider kyc) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: 400,
+        height: 450,
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -650,9 +660,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
             Text("Security Audit Log", style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
-            _buildAuditItem("Login Success", "Lagos, Nigeria • iPhone 15 Pro", "Today, 10:42 AM"),
-            _buildAuditItem("PIN Changed", "System • IP: 192.168.1.1", "Yesterday, 06:15 PM"),
-            _buildAuditItem("New Device Linked", "London, UK • MacBook Air", "Jan 12, 2026"),
+            Expanded(
+              child: kyc.securityLogs.isEmpty
+                  ? Center(child: Text("No recent security activity", style: GoogleFonts.outfit(color: AppColors.textMuted)))
+                  : ListView.builder(
+                      itemCount: kyc.securityLogs.length,
+                      itemBuilder: (context, index) {
+                        final log = kyc.securityLogs[index];
+                        return _buildAuditItem(
+                          log['title'] ?? 'Security Alert',
+                          log['message'] ?? '',
+                          log['created_at'] != null 
+                            ? log['created_at'].toString().split('T').first 
+                            : 'Recently',
+                        );
+                      },
+                    ),
+            ),
           ],
         ),
       ),
@@ -1127,7 +1151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("MEMBER SINCE", style: GoogleFonts.outfit(color: Colors.white38, fontSize: 8)),
-                  Text("JAN 2024", style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text("ACTIVE MERCHANT", style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 ],
               ),
               OutlinedButton.icon(

@@ -32,6 +32,8 @@ class User extends Authenticatable
         'otp_expires_at',
         'is_otp_verified',
         'kyb_status',
+        'trader_points',
+        'referral_balance',
     ];
 
     /**

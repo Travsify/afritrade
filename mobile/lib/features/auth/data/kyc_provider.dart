@@ -25,7 +25,8 @@ class KYCProvider with ChangeNotifier {
   
   // Profile & Gamification
   String? _profileImagePath;
-  int _traderPoints = 1250; // Mock initial points for 'Silver' tier
+  int _traderPoints = 0;
+  List<dynamic> _securityLogs = [];
 
   // KYB Metadata
   String? _kybRejectionReason;
@@ -55,6 +56,7 @@ class KYCProvider with ChangeNotifier {
   double get referralEarnings => _referralEarnings;
   String? get profileImagePath => _profileImagePath;
   int get traderPoints => _traderPoints;
+  List<dynamic> get securityLogs => _securityLogs;
 
   KYCProvider() {
     _loadState();
@@ -77,10 +79,59 @@ class KYCProvider with ChangeNotifier {
     _transactionPin = prefs.getString('user_pin') ?? "";
     _appLanguage = prefs.getString('app_language') ?? "English (Global)";
     _profileImagePath = prefs.getString('profile_image_path');
-    _traderPoints = prefs.getInt('trader_points') ?? 1250;
+    _traderPoints = prefs.getInt('trader_points') ?? 0;
     
     _isInitialized = true;
     notifyListeners();
+  }
+
+  Future<void> fetchProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token == null) return;
+
+    try {
+      final response = await AnchorService().sendGetRequest(
+        endpoint: '/profile',
+        token: token,
+      );
+
+      if (response != null && response['status'] == 'success') {
+        final userData = response['user'];
+        
+        // Update basic info in prefs for offline use
+        await prefs.setString('user_name', userData['name'] ?? '');
+        await prefs.setString('user_email', userData['email'] ?? '');
+        
+        // Update local state
+        _traderPoints = userData['trader_points'] ?? 0;
+        _referralCount = userData['referral_count'] ?? 0;
+        _referralEarnings = (userData['referral_balance'] ?? 0).toDouble();
+        _monthlyUsage = (userData['monthly_usage'] ?? 0).toDouble();
+        _securityLogs = userData['security_logs'] ?? [];
+        
+        // Sync KYC/KYB status
+        String kycStatusStr = userData['verification_status'] ?? 'unverified';
+        if (kycStatusStr == 'verified') _kycStatus = KYCStatus.verified;
+        else if (kycStatusStr == 'pending') _kycStatus = KYCStatus.pending;
+        else if (kycStatusStr == 'rejected') _kycStatus = KYCStatus.rejected;
+        
+        String kybStatusStr = userData['kyb_status'] ?? 'none';
+        if (kybStatusStr == 'verified') _kybStatus = KYBStatus.verified;
+        else if (kybStatusStr == 'pending') _kybStatus = KYBStatus.pending;
+        else if (kybStatusStr == 'rejected') _kybStatus = KYBStatus.rejected;
+
+        // Map tier to limits
+        int tier = userData['kyc_tier'] ?? 1;
+        if (tier == 1) _monthlyLimit = 5000;
+        else if (tier == 2) _monthlyLimit = 50000;
+        else if (tier >= 3) _monthlyLimit = 500000;
+
+        notifyListeners();
+      }
+    } catch (e) {
+      print("Error fetching profile: $e");
+    }
   }
 
   Future<void> setLoggedIn(bool value) async {

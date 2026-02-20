@@ -597,4 +597,13 @@ class AnchorService {
       body: {'type': type},
     );
   }
+
+  // ============ GENERIC WRAPPERS ============
+  Future<Map<String, dynamic>?> sendGetRequest({
+    required String endpoint,
+    String? token, // Token is handled by ApiClient but kept for compat
+  }) async {
+    final response = await _apiClient.get('${AppApiConfig.baseUrl}$endpoint');
+    return response.success ? response.data : null;
+  }
 }

@@ -157,9 +157,21 @@ class AuthApiController extends Controller
      */
     public function profile()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $wallets = $user->wallets;
-        $totalBalance = $wallets->sum('balance');
+        $totalBalance = (float) $wallets->sum('balance');
+
+        $referralCount = $user->referrals()->count();
+        $monthlyUsage = (float) $user->transactions()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->sum('amount');
+        
+        $securityLogs = $user->notifications()
+            ->where('type', 'security')
+            ->latest()
+            ->take(5)
+            ->get(['title', 'message', 'created_at']);
 
         return response()->json([
             'status' => 'success',
@@ -176,6 +188,11 @@ class AuthApiController extends Controller
                 'total_balance' => $totalBalance,
                 'wallets_count' => $wallets->count(),
                 'created_at' => $user->created_at->toISOString(),
+                'trader_points' => (int) $user->trader_points,
+                'referral_balance' => (float) $user->referral_balance,
+                'referral_count' => $referralCount,
+                'monthly_usage' => $monthlyUsage,
+                'security_logs' => $securityLogs,
             ]
         ]);
     }
