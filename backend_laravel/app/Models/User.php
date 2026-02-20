@@ -34,6 +34,8 @@ class User extends Authenticatable
         'kyb_status',
         'trader_points',
         'referral_balance',
+        'status',
+        'is_active',
     ];
 
     /**

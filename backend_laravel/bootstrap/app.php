@@ -27,5 +27,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('admin.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->report(function (\Throwable $e) {
+            if (request()->is('admin/*')) {
+                \Illuminate\Support\Facades\Log::error('Admin Error: ' . $e->getMessage(), [
+                    'url' => request()->fullUrl(),
+                    'admin_id' => auth()->guard('admin')->id(),
+                    'stack' => $e->getTraceAsString(),
+                ]);
+            }
+        });
     })->create();

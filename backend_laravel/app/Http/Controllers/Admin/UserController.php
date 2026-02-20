@@ -40,8 +40,8 @@ class UserController extends Controller
             $q->latest()->take(10);
         }, 'kycDocuments', 'virtualAccounts', 'cards']);
 
-        $totalBalanceUSD = $user->wallets->where('currency', 'USD')->sum('balance');
-        $totalBalanceNGN = $user->wallets->where('currency', 'NGN')->sum('balance');
+        $totalBalanceUSD = $user->wallets ? $user->wallets->where('currency', 'USD')->sum('balance') : 0;
+        $totalBalanceNGN = $user->wallets ? $user->wallets->where('currency', 'NGN')->sum('balance') : 0;
 
         return view('admin.users.show', compact('user', 'totalBalanceUSD', 'totalBalanceNGN'));
     }
@@ -64,12 +64,13 @@ class UserController extends Controller
 
     public function toggleStatus(User $user)
     {
-        // This requires an 'is_active' or 'status' column on users table.
-        // For now, we'll assume a 'status' column or just toggle a flag if it exists.
-        // Let's check migration first. If not exists, we might need to add it.
-        // CHECK: We have 'verification_status' but not account status (active/suspended).
-        // For now, let's just redirect with a message that this feature needs a migration.
-        
-        return back()->with('info', 'User suspension feature coming soon (needs migration).');
+        $user->is_active = !$user->is_active;
+        $user->status = $user->is_active ? 'active' : 'suspended';
+        $user->save();
+
+        $action = $user->is_active ? 'Activated' : 'Suspended';
+        \App\Services\AuditLogger::log("{$action} User #{$user->id}", "User status changed to {$user->status}");
+
+        return back()->with('success', "User account has been {$user->status} successfully.");
     }
 }

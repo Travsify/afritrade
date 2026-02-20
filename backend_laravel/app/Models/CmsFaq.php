@@ -6,5 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class CmsFaq extends Model
 {
-    //
+    protected $fillable = [
+        'question',
+        'answer',
+        'category',
+        'ordering',
+    ];
 }

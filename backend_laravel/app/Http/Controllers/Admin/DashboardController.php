@@ -13,7 +13,7 @@ class DashboardController extends Controller
         $totalUsers = \App\Models\User::count();
 
         // 2. Revenue (Assuming we take a percentage or fees, but for now Total Transaction Volume)
-        $totalRevenue = \App\Models\Transaction::where('status', 'completed')
+        $totalRevenue = (float) \App\Models\Transaction::where('status', 'completed')
             ->whereIn('type', ['deposit', 'withdrawal']) // Only count external movements as "volume" for now
             ->sum('amount');
         
