@@ -5,13 +5,25 @@ import '../theme/app_colors.dart';
 
 class SecurityPrompt extends StatefulWidget {
   final String title;
-  final Function(bool) onAuthenticated;
+  final Function(String) onAuthenticated;
 
   const SecurityPrompt({
     super.key, 
     this.title = "Confirm Transaction",
     required this.onAuthenticated,
   });
+
+  static Future<String?> show(BuildContext context, {String title = "Confirm Transaction", String? message}) {
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SecurityPrompt(
+        title: title,
+        onAuthenticated: (pin) => Navigator.pop(context, pin),
+      ),
+    );
+  }
 
   @override
   State<SecurityPrompt> createState() => _SecurityPromptState();
@@ -41,7 +53,9 @@ class _SecurityPromptState extends State<SecurityPrompt> {
   Future<void> _authenticateBiometrics() async {
     final success = await _security.authenticateBiometrics();
     if (success) {
-      widget.onAuthenticated(true);
+      // Biometrics doesn't return PIN, so we might need a stored PIN or bypass logic
+      // For now, if biometrics succeed, we call onAuthenticated with a special bypass or the last known session token
+      widget.onAuthenticated("BIOMETRIC_SUCCESS");
     }
   }
 
@@ -69,7 +83,7 @@ class _SecurityPromptState extends State<SecurityPrompt> {
     setState(() => _isLoading = false);
 
     if (res['status'] == 'success') {
-      widget.onAuthenticated(true);
+      widget.onAuthenticated(_pin.join());
     } else {
       setState(() {
         _pin.clear();

@@ -59,6 +59,9 @@ class AppApiConfig {
 
   // Invoices
   static const String invoices = '$baseUrl/invoices';
+  static const String banners = '$baseUrl/banners';
+  static const String tradeInsights = '$baseUrl/trade-insights';
+  static const String bulkPayments = '$baseUrl/bulk-payments';
 
   // Alerts
   static const String alerts = '$baseUrl/alerts';

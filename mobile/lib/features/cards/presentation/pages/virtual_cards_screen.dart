@@ -185,99 +185,11 @@ class _VirtualCardsScreenState extends State<VirtualCardsScreen> {
   }
 
   Widget _buildCardItem(Map<String, dynamic> card, int index) {
-    final isActive = card['status'] == 'Active';
-    final brand = card['brand'] ?? 'Visa';
-
     return FadeInUp(
       delay: Duration(milliseconds: index * 100),
-      child: GestureDetector(
+      child: HolographicCard(
+        card: card,
         onTap: () => _showCardDetails(card),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 20),
-          height: 200,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: brand == 'Visa'
-                  ? [const Color(0xFF1A1F71), const Color(0xFF2B3187)]
-                  : [const Color(0xFFEB001B), const Color(0xFFF79E1B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: (brand == 'Visa' ? const Color(0xFF1A1F71) : const Color(0xFFEB001B)).withOpacity(0.4),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // Background pattern
-              Positioned(
-                right: -30, top: -30,
-                child: Container(
-                  height: 150, width: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(card['label'] ?? 'Virtual Card', style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isActive ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            card['status'] ?? 'Active',
-                            style: GoogleFonts.outfit(color: isActive ? Colors.greenAccent : Colors.redAccent, fontSize: 11),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      "**** **** **** ${card['last4'] ?? '0000'}",
-                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w500, letterSpacing: 2),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Balance", style: GoogleFonts.outfit(color: Colors.white54, fontSize: 11)),
-                            Text("\$${(card['balance'] ?? 0.0).toStringAsFixed(2)}", style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text("VALID THRU", style: GoogleFonts.outfit(color: Colors.white54, fontSize: 10)),
-                            Text(card['expiry'] ?? '12/28', style: GoogleFonts.outfit(color: Colors.white, fontSize: 14)),
-                          ],
-                        ),
-                        Text(brand.toUpperCase(), style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -395,6 +307,181 @@ class _VirtualCardsScreenState extends State<VirtualCardsScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class HolographicCard extends StatefulWidget {
+  final Map<String, dynamic> card;
+  final VoidCallback onTap;
+
+  const HolographicCard({super.key, required this.card, required this.onTap});
+
+  @override
+  State<HolographicCard> createState() => _HolographicCardState();
+}
+
+class _HolographicCardState extends State<HolographicCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _holoAnimation;
+  late Animation<double> _tiltAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat(reverse: true);
+
+    _holoAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+    
+    _tiltAnimation = Tween<double>(begin: -0.05, end: 0.05).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = widget.card['status'] == 'Active';
+    final brand = widget.card['brand'] ?? 'Visa';
+    final isVisa = brand == 'Visa';
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        // Simulated 3D Tilt
+        final transform = Matrix4.identity()
+          ..setEntry(3, 2, 0.001)
+          ..rotateX(_tiltAnimation.value)
+          ..rotateY(_tiltAnimation.value * 0.5);
+
+        return Transform(
+          transform: transform,
+          alignment: Alignment.center,
+          child: GestureDetector(
+            onTap: widget.onTap,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              height: 200,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isVisa
+                      ? [const Color(0xFF1A1F71), const Color(0xFF2B3187)]
+                      : [const Color(0xFFEB001B), const Color(0xFFF79E1B)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isVisa ? const Color(0xFF1A1F71) : const Color(0xFFEB001B))
+                        .withOpacity(0.4 + (_tiltAnimation.value.abs())), // Pulsing shadow
+                    blurRadius: 15 + (_tiltAnimation.value.abs() * 50),
+                    offset: Offset(0, 8 + (_tiltAnimation.value * 20)),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                   // Content Layer
+                   Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(widget.card['label'] ?? 'Virtual Card', style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isActive ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                widget.card['status'] ?? 'Active',
+                                style: GoogleFonts.outfit(color: isActive ? Colors.greenAccent : Colors.redAccent, fontSize: 11),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          "**** **** **** ${widget.card['last4'] ?? '0000'}",
+                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w500, letterSpacing: 2),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Balance", style: GoogleFonts.outfit(color: Colors.white54, fontSize: 11)),
+                                Text("\$${(widget.card['balance'] ?? 0.0).toStringAsFixed(2)}", style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text("VALID THRU", style: GoogleFonts.outfit(color: Colors.white54, fontSize: 10)),
+                                Text(widget.card['expiry'] ?? '12/28', style: GoogleFonts.outfit(color: Colors.white, fontSize: 14)),
+                              ],
+                            ),
+                            Text(brand.toUpperCase(), style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Holographic Overlay Layer
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          begin: Alignment(_holoAnimation.value - 1, -1),
+                          end: Alignment(_holoAnimation.value, 1),
+                          colors: [
+                            Colors.white.withOpacity(0.0),
+                            Colors.white.withOpacity(0.1),
+                            Colors.white.withOpacity(0.3), // Shine peak
+                            Colors.white.withOpacity(0.1),
+                            Colors.white.withOpacity(0.0),
+                          ],
+                          stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Noise/Grain Overlay (Optional, simple circular one for now)
+                  Positioned(
+                    right: -30, top: -30,
+                    child: Container(
+                      height: 150, width: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.05),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

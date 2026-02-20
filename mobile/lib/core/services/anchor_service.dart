@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'package:afritrad_mobile/core/constants/api_config.dart';
+import 'package:afritrad_mobile/core/services/api_client.dart';
+import 'package:http/http.dart' as http;
 
 class AnchorService {
   static final AnchorService _instance = AnchorService._internal();
+  final ApiClient _apiClient = ApiClient();
 
   factory AnchorService() {
     return _instance;
@@ -32,6 +34,36 @@ class AnchorService {
   final List<Map<String, dynamic>> _taxReports = [];
   
   final ValueNotifier<List<Map<String, dynamic>>> beneficiariesNotifier = ValueNotifier<List<Map<String, dynamic>>>([]);
+
+  Future<List<Map<String, dynamic>>> getBeneficiaries() async {
+    final response = await _apiClient.get('${AppApiConfig.baseUrl}/beneficiaries');
+    if (response.success && response.data != null) {
+      final dynamic rawData = response.data!['data'] ?? response.data!;
+      if (rawData is List) {
+        _beneficiaries.clear();
+        _beneficiaries.addAll(rawData.map((e) => Map<String, dynamic>.from(e)));
+        beneficiariesNotifier.value = List<Map<String, dynamic>>.from(_beneficiaries);
+        await _saveToPersistence();
+        return _beneficiaries;
+      }
+    }
+    return List<Map<String, dynamic>>.from(_beneficiaries);
+  }
+
+  Future<Map<String, dynamic>> addBeneficiary(Map<String, dynamic> beneficiary) async {
+    final response = await _apiClient.post(
+      '${AppApiConfig.baseUrl}/beneficiaries',
+      body: beneficiary,
+    );
+    if (response.success && response.data != null) {
+      final newBeneficiary = Map<String, dynamic>.from(response.data!['data'] ?? response.data!);
+      _beneficiaries.add(newBeneficiary);
+      beneficiariesNotifier.value = List<Map<String, dynamic>>.from(_beneficiaries);
+      await _saveToPersistence();
+      return response.data!;
+    }
+    return {'status': 'error', 'message': response.message};
+  }
 
   static const String _baseUrl = 'https://api.getanchor.co/api/v1';
 
@@ -137,28 +169,11 @@ class AnchorService {
   // ============ WALLET ============
   // ============ WALLET ============
   Future<Map<String, dynamic>> getWalletBalance() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      
-      if (userId != null) {
-        final response = await http.get(
-          Uri.parse('$_backendUrl/wallet_balance.php?user_id=$userId'),
-          headers: await _getHeaders(),
-        );
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          if (data['status'] == 'success') {
-             return data;
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint("Wallet Balance API Error: $e");
+    final response = await _apiClient.get('${AppApiConfig.baseUrl}/wallet_balance.php');
+    if (response.success && response.data != null) {
+      return response.data!;
     }
     
-    // Return empty/zero state on failure instead of mock data
     return {
       'total_usd': 0.00,
       'assets': [],
@@ -167,206 +182,156 @@ class AnchorService {
 
   // ============ VIRTUAL ACCOUNTS (NUBAN) ============
 
-  Future<Map<String, String>> _getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-    return AppApiConfig.getHeaders(token);
+  Future<Map<String, dynamic>> getCryptoFundingAddress() async {
+    final response = await _apiClient.get('${AppApiConfig.baseUrl}/crypto/address');
+    if (response.success && response.data != null) {
+      return response.data!;
+    }
+    return {'status': 'error', 'message': response.message};
   }
 
-  // Use the central API config
-  static const String _backendUrl = AppApiConfig.baseUrl; 
+  Future<Map<String, dynamic>> paySupplier({
+    required double amount,
+    required String currency,
+    required String recipient,
+    required String destination,
+    String? transactionPin,
+  }) async {
+    final response = await _apiClient.post(
+      AppApiConfig.paySupplier,
+      body: {
+        'amount': amount,
+        'currency': currency,
+        'recipient': recipient,
+        'destination': destination,
+      },
+      transactionPin: transactionPin,
+    );
+    return response.success ? response.data! : {'status': 'error', 'message': response.message};
+  }
 
-  Future<Map<String, dynamic>> getCryptoFundingAddress() async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_backendUrl/crypto/address'),
-        headers: headers,
-      );
+  Future<Map<String, dynamic>> schedulePayment(Map<String, dynamic> payment) async {
+    // Simulate API call
+    await Future.delayed(const Duration(seconds: 1));
+    payment['id'] = DateTime.now().millisecondsSinceEpoch.toString();
+    payment['status'] = 'Pending';
+    _scheduledPayments.add(payment);
+    await _saveToPersistence();
+    return {'status': 'success', 'data': payment};
+  }
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+  Future<List<Map<String, dynamic>>> getTransactions() async {
+    final response = await _apiClient.get(AppApiConfig.transactions);
+    if (response.success && response.data != null) {
+      final dynamic rawData = response.data!['data'] ?? response.data!;
+      if (rawData is List) {
+        return List<Map<String, dynamic>>.from(rawData);
       }
-      return {'status': 'error', 'message': 'Failed to fetch address'};
-    } catch (e) {
-      return {'status': 'error', 'message': 'Network error: $e'};
     }
+    return [];
+  }
+
+  Future<Map<String, dynamic>> getMarketRates() async {
+    final response = await _apiClient.get(AppApiConfig.rates);
+    if (response.success && response.data != null) {
+      return response.data!;
+    }
+    return {'USD_NGN': 1550.0, 'EUR_USD': 1.08, 'CNY_USD': 0.14};
+  }
+
+  Future<double> getExchangeRate(String from, String to) async {
+    final rates = await getMarketRates();
+    final pair = '${from}_$to';
+    if (rates.containsKey(pair)) {
+      return (rates[pair] as num).toDouble();
+    }
+    // Try inverse
+    final inversePair = '${to}_$from';
+    if (rates.containsKey(inversePair)) {
+      final inverseRate = (rates[inversePair] as num).toDouble();
+      return inverseRate > 0 ? 1.0 / inverseRate : 1.0;
+    }
+    return 1.0;
+  }
+
+  Future<List<Map<String, dynamic>>> getScheduledPayments() async {
+    return List<Map<String, dynamic>>.from(_scheduledPayments);
+  }
+
+  Future<Map<String, dynamic>> swapCurrency({
+    required String from,
+    required String to,
+    required double amount,
+    String? transactionPin,
+  }) async {
+    final response = await _apiClient.post(
+      AppApiConfig.walletSwap,
+      body: {
+        'from_currency': from,
+        'to_currency': to,
+        'amount': amount,
+      },
+      transactionPin: transactionPin,
+    );
+    return response.success ? response.data! : {'status': 'error', 'message': response.message};
   }
 
   // ============ VIRTUAL ACCOUNTS (NUBAN) ============
 
   Future<List<Map<String, dynamic>>> getVirtualAccounts() async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_backendUrl/virtual-accounts'),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        _accounts.clear();
-        _accounts.addAll(data.map((e) => Map<String, dynamic>.from(e)));
-        accountsNotifier.value = List<Map<String, dynamic>>.from(_accounts);
-        _saveToPersistence(); // Cache valid response
-        return _accounts;
-      } else {
-        debugPrint('Error fetching accounts: ${response.statusCode} - ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('Connection error fetching accounts: $e');
-    }
+    final response = await _apiClient.get(AppApiConfig.virtualAccounts);
     
-    // Fallback to local cache if offline or error
-    if (!_accounts.any((a) => a['currency'] == 'CNY')) {
-      _createLocalVirtualAccount(currency: 'CNY', label: 'CNY Wallet');
+    if (response.success && response.data != null) {
+      // Assuming response body is a List or has a 'data' field that is a list
+      final dynamic rawData = response.data!['data'] ?? response.data!;
+      if (rawData is List) {
+        _accounts.clear();
+        _accounts.addAll(rawData.map((e) => Map<String, dynamic>.from(e)));
+        accountsNotifier.value = List<Map<String, dynamic>>.from(_accounts);
+        await _saveToPersistence();
+        return _accounts;
+      }
     }
+
     return List<Map<String, dynamic>>.from(_accounts);
   }
 
   Future<Map<String, dynamic>> createVirtualAccount({required String currency, required String label}) async {
-    try {
-      debugPrint('[VirtualAccount] Creating $currency account with label: $label');
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('$_backendUrl/virtual-accounts'),
-        headers: headers,
-        body: jsonEncode({
-          'currency': currency,
-          'label': label,
-        }),
-      ).timeout(Duration(seconds: 10));
+    final response = await _apiClient.post(
+      AppApiConfig.virtualAccounts,
+      body: {
+        'currency': currency,
+        'label': label,
+      },
+    );
 
-      debugPrint('[VirtualAccount] Response status: ${response.statusCode}');
-      debugPrint('[VirtualAccount] Response body: ${response.body}');
-      
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (data['status'] == 'success' && data['data'] != null) {
-          final newAccount = Map<String, dynamic>.from(data['data']);
-          _accounts.add(newAccount);
-          accountsNotifier.value = List<Map<String, dynamic>>.from(_accounts);
-          await _saveToPersistence();
-          debugPrint('[VirtualAccount] Successfully created $currency account');
-          return data;
-        }
-      }
-      
-      debugPrint('[VirtualAccount] Failed to create account: ${data['message']}');
-      return {'status': 'error', 'message': data['message'] ?? 'Failed to create $currency account. Please try again.'};
-    } catch (e) {
-      debugPrint('[VirtualAccount] Error creating $currency account: $e');
-      debugPrint('[VirtualAccount] Using fallback - creating account locally');
-      
-      // Fallback: Create account locally when backend is unavailable
-      return _createLocalVirtualAccount(currency: currency, label: label);
-    }
-  }
-
-  Map<String, dynamic> _createLocalVirtualAccount({required String currency, required String label}) {
-    // Generate mock account details based on currency
-    String accountNumber = '';
-    String bankName = 'Virtual Wallet';
-    
-    if (currency != 'CNY') {
-      accountNumber = _generateAccountNumber(currency);
-      bankName = _getBankName(currency);
+    if (response.success && response.data != null) {
+      final newAccount = Map<String, dynamic>.from(response.data!['data'] ?? response.data!);
+      _accounts.add(newAccount);
+      accountsNotifier.value = List<Map<String, dynamic>>.from(_accounts);
+      await _saveToPersistence();
+      return response.data!;
     }
     
-    final newAccount = {
-      'id': 'local_${DateTime.now().millisecondsSinceEpoch}',
-      'currency': currency,
-      'label': label,
-      'account_number': accountNumber.isNotEmpty ? accountNumber : null,
-      'account_name': label,
-      'bank_name': currency == 'CNY' ? 'CNY Wallet' : bankName,
-      'balance': 0.0,
-      'status': 'active',
-      'created_at': DateTime.now().toIso8601String(),
-      // Currency-specific details
-      if (currency == 'EUR') ...{
-        'iban': 'DE89$accountNumber',
-        'bic': 'DEUTDEFF',
-      },
-      if (currency == 'GBP') ...{
-        'sort_code': '20-00-00',
-        'account_number': accountNumber.isNotEmpty ? accountNumber.substring(0, 8) : '',
-      },
-      if (currency == 'USD') ...{
-        'routing_number': '026009593',
-      },
-       if (currency == 'CNY') ...{
-        'type': 'wallet_only',
-      },
-    };
-
-    _accounts.add(newAccount);
-    accountsNotifier.value = List<Map<String, dynamic>>.from(_accounts);
-    _saveToPersistence();
-    
-    debugPrint('[VirtualAccount] Local $currency account created successfully');
-    return {
-      'status': 'success',
-      'data': newAccount,
-      'message': '$currency account created successfully!',
-    };
-  }
-
-  String _generateAccountNumber(String currency) {
-    final random = DateTime.now().millisecondsSinceEpoch.toString();
-    switch (currency) {
-      case 'EUR':
-        return random.substring(random.length - 10);
-      case 'GBP':
-        return random.substring(random.length - 8);
-      case 'USD':
-        return random.substring(random.length - 10);
-      default:
-        return random.substring(random.length - 10);
-    }
-  }
-
-  String _getBankName(String currency) {
-    switch (currency) {
-      case 'EUR':
-        return 'Deutsche Bank (Virtual)';
-      case 'GBP':
-        return 'Barclays (Virtual)';
-      case 'USD':
-        return 'Bank of America (Virtual)';
-      case 'NGN':
-        return 'Providus Bank (Virtual)';
-      default:
-        return 'Virtual Bank';
-    }
+    return {'status': 'error', 'message': response.message};
   }
   
   // ============ VIRTUAL CARDS ============
 
   Future<List<Map<String, dynamic>>> getVirtualCards() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      if (userId != null) {
-        final response = await http.get(
-          Uri.parse(AppApiConfig.cards),
-          headers: await _getHeaders(),
-        );
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          if (data['status'] == 'success') {
-             _cards.clear();
-             _cards.addAll(List<Map<String, dynamic>>.from(data['data']));
-             cardsNotifier.value = List<Map<String, dynamic>>.from(_cards);
-             return _cards;
-          }
-        }
+    final response = await _apiClient.get(AppApiConfig.cards);
+    
+    if (response.success && response.data != null) {
+      final List<dynamic> rawData = response.data!['data'] ?? response.data!;
+      if (rawData is List) {
+        _cards.clear();
+        _cards.addAll(rawData.map((e) => Map<String, dynamic>.from(e)));
+        cardsNotifier.value = List<Map<String, dynamic>>.from(_cards);
+        await _saveToPersistence();
+        return _cards;
       }
-    } catch (e) {
-      debugPrint("Get Cards Error: $e");
     }
-    return [];
+    return List<Map<String, dynamic>>.from(_cards);
   }
 
   Future<Map<String, dynamic>> issueCard({required String label, required double amount, required String brand}) async {
@@ -400,354 +365,124 @@ class AnchorService {
   }
 
   Future<Map<String, dynamic>> _cardAction(String action, Map<String, dynamic> extras) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      
-      if (userId == null) return {'status': 'error', 'message': 'Not logged in'};
-
-      final body = {
-        'user_id': userId,
+    final response = await _apiClient.post(
+      '${AppApiConfig.baseUrl}/cards.php',
+      body: {
         'action': action,
         ...extras
-      };
+      },
+    );
 
-      final response = await http.post(
-        Uri.parse('$_backendUrl/cards.php'),
-        headers: await _getHeaders(),
-        body: jsonEncode(body),
-      );
-
-      final data = jsonDecode(response.body);
-      
+    if (response.success && response.data != null) {
       // Refresh list to keep UI in sync
       getVirtualCards();
-      
-      return data;
-    } catch (e) {
-      return {'status': 'error', 'message': 'Network error: $e'};
+      return response.data!;
     }
+    
+    return {'status': 'error', 'message': response.message};
   }
 
   // ============ BUSINESS PAYMENTS & SWAP (ANCHOR) ============
 
   // ============ MARKETS & RATES ============
   
-  // Cache for rates
-  Map<String, double> _cachedRates = {};
-
-  Future<double> getExchangeRate(String from, String to) async {
-    // If cache empty or specific pair missing, try fetch. 
-    // Ideally we fetch all at start or periodically.
-    if (_cachedRates.isEmpty || !_cachedRates.containsKey("${from}_${to}")) {
-      await _fetchRates();
-    }
-    return _cachedRates["${from}_${to}"] ?? 1.0;
-  }
-  
-  Future<void> _fetchRates() async {
-    try {
-      final response = await http.get(
-        Uri.parse(AppApiConfig.rates),
-        headers: await _getHeaders(),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'success' && data['rates'] != null) {
-          // Flatten rates to Map<String, double>
-          // API returns { "USD_NGN": 1600, ... }
-          Map<String, dynamic> rates = data['rates'];
-          rates.forEach((key, value) {
-             _cachedRates[key] = (value is num) ? value.toDouble() : 1.0;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint("Rates API Error: $e");
-    }
-  }
-
-  Future<Map<String, dynamic>> swapCurrency({
-    required double amount,
-    required String fromCurrency,
-    required String toCurrency,
-  }) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      
-      if (userId == null) {
-        return {'status': 'error', 'message': 'User not logged in'};
-      }
-
-      final response = await http.post(
-        Uri.parse(AppApiConfig.walletSwap),
-        headers: await _getHeaders(),
-        body: jsonEncode({
-          'user_id': userId,
-          'amount': amount,
-          'from_currency': fromCurrency,
-          'to_currency': toCurrency,
-        }),
-      );
-
-      final data = jsonDecode(response.body);
-      return data;
-    } catch (e) {
-      debugPrint("Swap API Error: $e");
-      return {'status': 'error', 'message': 'Swap failed due to network error'};
-    }
-  }
-
-  Future<Map<String, dynamic>> paySupplier({
-    required double amount,
-    required String currency,
-    required String recipient,
-    required String destination,
-  }) async {
-    await Future.delayed(const Duration(seconds: 2));
-    
-    return {
-      'status': 'success',
-      'tx_id': 'ANCH_PAY_${DateTime.now().millisecondsSinceEpoch}',
-      'amount': amount,
-      'currency': currency,
-      'recipient': recipient,
-      'destination': destination,
-      'timestamp': DateTime.now().toIso8601String(),
-    };
-  }
-  // ============ TRANSACTIONS ============
-  // ============ TRANSACTIONS ============
-  Future<List<Map<String, dynamic>>> getTransactions() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      
-      if (userId != null) {
-        final response = await http.get(
-          Uri.parse(AppApiConfig.transactions),
-          headers: await _getHeaders(),
-        );
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          if (data['status'] == 'success') {
-             return List<Map<String, dynamic>>.from(data['data']);
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint("Transactions API Error: $e");
-    }
-    return [];
-  }
-
-  // ============ MARKET RATES DASHBOARD ============
-  Future<List<Map<String, dynamic>>> getMarketRates() async {
-    try {
-      final response = await http.get(
-        Uri.parse(AppApiConfig.rates),
-        headers: await _getHeaders(),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'success' && data['market'] != null) {
-          return List<Map<String, dynamic>>.from(data['market']);
-        }
-      }
-    } catch (e) {
-      debugPrint("Market Rates Error: $e");
-    }
-    // Fallback to empty or cache
-    return [];
-  }
-
-  // ============ BILLS ============
-  Future<Map<String, dynamic>> payBill({required String type, required double amount, required String reference}) async {
-    await Future.delayed(const Duration(seconds: 2));
-    return {
-      'status': 'success',
-      'tx_id': 'BILL_${type.toUpperCase()}_${DateTime.now().millisecondsSinceEpoch}',
-      'message': '$type payment of $amount successful.',
-    };
-  }
-
-  // ============ BENEFICIARIES ============
-  Future<List<Map<String, dynamic>>> getBeneficiaries() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return List<Map<String, dynamic>>.from(_beneficiaries);
-  }
-
-  Future<void> addBeneficiary(Map<String, dynamic> beneficiary) async {
-    await Future.delayed(const Duration(seconds: 1));
-    _beneficiaries.add(beneficiary);
-    beneficiariesNotifier.value = List<Map<String, dynamic>>.from(_beneficiaries);
-    await _saveToPersistence();
-  }
-
-  // ============ PAYMENT SCHEDULER ============
-  Future<List<Map<String, dynamic>>> getScheduledPayments() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return List<Map<String, dynamic>>.from(_scheduledPayments);
-  }
-
-  Future<void> schedulePayment(Map<String, dynamic> schedule) async {
-    await Future.delayed(const Duration(seconds: 1));
-    _scheduledPayments.add(schedule);
-    await _saveToPersistence();
-  }
-
-  // ============ RATE ALERTS ============
   Future<List<Map<String, dynamic>>> getRateAlerts() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id') ?? '1';
-      
-      final response = await http.get(
-        Uri.parse(AppApiConfig.kycStatus),
-        headers: await _getHeaders(),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'success') {
-          return List<Map<String, dynamic>>.from(data['data']);
-        }
+    final response = await _apiClient.get(AppApiConfig.alerts);
+    if (response.success && response.data != null) {
+      final dynamic rawData = response.data!['data'] ?? response.data!;
+      if (rawData is List) {
+        return List<Map<String, dynamic>>.from(rawData);
       }
-    } catch (e) {
-      debugPrint("Get Rate Alerts Error: $e");
     }
     return [];
   }
 
   Future<bool> createRateAlert(Map<String, dynamic> alert) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id') ?? '1';
-      
-      final response = await http.post(
-        Uri.parse('https://admin.afritradepay.com/api/rate_alerts.php?action=create'),
-        body: {
-          'user_id': userId,
-          'currency_pair': alert['pair'].toString().replaceAll('/', '_'),
-          'target_rate': alert['target'].toString(),
-          'direction': alert['direction'].toString(),
-        },
-      );
-
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint("Create Rate Alert Error: $e");
-    }
-    return false;
+    final response = await _apiClient.post(
+      AppApiConfig.alerts,
+      body: {
+        'currency_pair': alert['pair'].toString().replaceAll('/', '_'),
+        'target_rate': alert['target'].toString(),
+        'direction': alert['direction'].toString(),
+      },
+    );
+    return response.success;
   }
 
   Future<bool> deleteRateAlert(int alertId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id') ?? '1';
-      
-      final response = await http.post(
-        Uri.parse('https://admin.afritradepay.com/api/rate_alerts.php?action=delete'),
-        body: {
-          'user_id': userId,
-          'alert_id': alertId.toString(),
-        },
-      );
-
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint("Delete Rate Alert Error: $e");
-    }
-    return false;
+    final response = await _apiClient.delete('${AppApiConfig.alerts}/$alertId');
+    return response.success;
   }
 
   // ============ ORDERS (ANCHOR INVOICING) ============
   Future<List<Map<String, dynamic>>> getOrders() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (_orders.isEmpty) {
-      _orders.addAll([
-        {'id': "INV-2026-001", 'desc': "Electronic Parts (China)", 'amount': 12500.0, 'priority': "High", 'status': 'unpaid'},
-        {'id': "INV-2026-002", 'desc': "Textile Batch B", 'amount': 8400.0, 'priority': "Medium", 'status': 'unpaid'},
-        {'id': "INV-2026-003", 'desc': "Auto Spare Parts", 'amount': 21500.0, 'priority': "Urgent", 'status': 'unpaid'},
-      ]);
-      await _saveToPersistence();
+    final response = await _apiClient.get(AppApiConfig.invoices);
+    if (response.success && response.data != null) {
+      final dynamic rawData = response.data!['data'] ?? response.data!;
+      if (rawData is List) {
+        return List<Map<String, dynamic>>.from(rawData);
+      }
     }
-    return List<Map<String, dynamic>>.from(_orders.where((o) => o['status'] == 'unpaid'));
+    return [];
   }
 
   Future<void> payOrder(String orderId) async {
-    await Future.delayed(const Duration(seconds: 2));
-    final index = _orders.indexWhere((o) => o['id'] == orderId);
-    if (index != -1) {
-      _orders[index]['status'] = 'paid';
-      await _saveToPersistence();
-    }
+    await _apiClient.post('${AppApiConfig.invoices}/$orderId/pay');
   }
 
   // ============ TRADE INSIGHTS ============
   Future<Map<String, dynamic>> getTradeInsights(String period) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    // Mock Data Generator (Restored)
+    final response = await _apiClient.get('${AppApiConfig.tradeInsights}?period=$period');
+    if (response.success && response.data != null) {
+      return response.data!;
+    }
+    // Fallback if endpoint not yet fully implemented in backend
     return {
-      'total_spent': 12450.00,
-      'spending_trend': [10.0, 40.0, 30.0, 60.0, 50.0, 90.0, 70.0],
-      'top_categories': [
-        {'name': 'Logistics', 'amount': 5200.0, 'percent': 42},
-        {'name': 'Raw Materials', 'amount': 3800.0, 'percent': 30},
-        {'name': 'Marketing', 'amount': 1500.0, 'percent': 12},
-        {'name': 'Operations', 'amount': 1950.0, 'percent': 16},
-      ],
-      'recommendations': [
-        {'title': 'Bulk Savings', 'desc': 'You could save 2% by consolidating supplier payments.'},
-        {'title': 'FX Timing', 'desc': 'Consider executing USD trades on Tuesdays for better rates.'},
-      ]
+      'total_spent': 0.00,
+      'spending_trend': [],
+      'top_categories': [],
+      'recommendations': []
     };
   }
 
   // ============ BULK PAYMENTS ============
   Future<List<Map<String, dynamic>>> getBulkPayments() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (_bulkPayments.isEmpty) {
-      _bulkPayments.addAll([
-        {'id': 'PAY_001', 'supplier': 'Shenzhen Tech Ltd', 'amount': 12500.0, 'currency': 'USD', 'status': 'pending'},
-        {'id': 'PAY_002', 'supplier': 'Mumbai Textiles', 'amount': 8400.0, 'currency': 'USD', 'status': 'pending'},
-        {'id': 'PAY_003', 'supplier': 'Ankara Hub', 'amount': 450000.0, 'currency': 'NGN', 'status': 'pending'},
-        {'id': 'PAY_004', 'supplier': 'Dubai Logistics', 'amount': 3200.0, 'currency': 'USD', 'status': 'pending'},
-      ]);
-      await _saveToPersistence();
-    }
-    return List<Map<String, dynamic>>.from(_bulkPayments.where((p) => p['status'] == 'pending'));
-  }
-
-  Future<void> processBulkPayments(List<String> ids) async {
-    await Future.delayed(const Duration(seconds: 3));
-    for (String id in ids) {
-      final index = _bulkPayments.indexWhere((p) => p['id'] == id);
-      if (index != -1) {
-        _bulkPayments[index]['status'] = 'processed';
+    final response = await _apiClient.get(AppApiConfig.bulkPayments);
+    if (response.success && response.data != null) {
+      final dynamic rawData = response.data!['data'] ?? response.data!;
+      if (rawData is List) {
+        return List<Map<String, dynamic>>.from(rawData);
       }
     }
-    await _saveToPersistence();
+    return [];
+  }
+
+  Future<void> processBulkPayments(List<String> ids, {String? transactionPin}) async {
+    await _apiClient.post(
+      '${AppApiConfig.bulkPayments}/process',
+      body: {'ids': ids},
+      transactionPin: transactionPin,
+    );
+  }
+
+  Future<Map<String, dynamic>> payBill({Map<String, dynamic>? billData, String? type, double? amount, String? reference}) async {
+    final response = await _apiClient.post(
+      '${AppApiConfig.baseUrl}/bills/pay',
+      body: billData ?? {
+        'type': type,
+        'amount': amount,
+        'reference': reference,
+      },
+    );
+    return response.success ? response.data! : {'status': 'error', 'message': response.message};
   }
 
   // ============ KYC & KYB ============
   
   // Check Status
   Future<Map<String, dynamic>> checkKYCStatus(String userId) async {
-    try {
-      final response = await http.get(
-        Uri.parse(AppApiConfig.kycStatus),
-        headers: await _getHeaders(),
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-    } catch (e) {
-      debugPrint('KYC Check Error: $e');
-    }
-    return {'status': 'success', 'kyc_status': 'none'}; // Default fallback
+    final response = await _apiClient.get(AppApiConfig.kycStatus);
+    return response.success ? response.data! : {'status': 'error', 'message': response.message};
   }
 
   // Upload Document (Multipart)
@@ -757,8 +492,12 @@ class AnchorService {
     required String filePath,
   }) async {
     try {
+      // Use ApiClient's base logic for headers but handle Multipart manually as ApiClient doesn't support it yet
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
       var request = http.MultipartRequest('POST', Uri.parse(AppApiConfig.kycUpload));
-      request.headers.addAll(await _getHeaders());
+      request.headers.addAll(AppApiConfig.getHeaders(token));
       request.fields['user_id'] = userId;
       request.fields['document_type'] = docType;
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
@@ -768,11 +507,11 @@ class AnchorService {
         final respStr = await response.stream.bytesToString();
         return jsonDecode(respStr);
       }
+      return {'status': 'error', 'message': 'Upload failed with status ${response.statusCode}'};
     } catch (e) {
       debugPrint('KYC Upload Error: $e');
       return {'status': 'error', 'message': e.toString()};
     }
-    return {'status': 'error', 'message': 'Upload failed'};
   }
 
   Future<Map<String, dynamic>> submitKYB({
@@ -780,55 +519,36 @@ class AnchorService {
     required String regNumber,
     required String industry,
   }) async {
-    await Future.delayed(const Duration(seconds: 2));
-    return {
-      'status': 'pending',
-      'id': 'KYB_${DateTime.now().millisecondsSinceEpoch}',
-      'estimated_time': '2-5 business days',
-    };
+    final response = await _apiClient.post(
+      AppApiConfig.kycVerifyBusiness,
+      body: {
+        'business_name': businessName,
+        'registration_number': regNumber,
+        'industry': industry,
+      },
+    );
+    return response.success ? response.data! : {'status': 'error', 'message': response.message};
   }
   
   // ============ BANNERS (CMS) ============
   Future<List<Map<String, dynamic>>> getBanners() async {
-    try {
-      final response = await http.get(
-        Uri.parse(AppApiConfig.baseUrl + '/banners'), // Use baseUrl + endpoint or add to AppApiConfig
-        headers: await _getHeaders(),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'success') {
-           return List<Map<String, dynamic>>.from(data['data']);
-        }
+    final response = await _apiClient.get('${AppApiConfig.baseUrl}/banners');
+    if (response.success && response.data != null) {
+      final dynamic rawData = response.data!['data'] ?? response.data!;
+      if (rawData is List) {
+        return List<Map<String, dynamic>>.from(rawData);
       }
-    } catch (e) {
-      debugPrint('Banner Error: $e');
     }
-    return []; // Return empty if error
+    return [];
   }
 
   // ============ REFERRALS ============
   Future<Map<String, dynamic>> getReferralData() async {
-    try {
-      // TODO: Get actual logged-in user ID
-      String userId = '1'; // Placeholder
-      final prefs = await SharedPreferences.getInstance();
-      // Assuming you store user_id in prefs login
-      // userId = prefs.getString('user_id') ?? '1';
-
-      final response = await http.get(
-        Uri.parse(AppApiConfig.referrals),
-        headers: await _getHeaders(),
-      );
-      
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-    } catch (e) {
-      debugPrint('Referral Error: $e');
+    final response = await _apiClient.get(AppApiConfig.referrals);
+    if (response.success && response.data != null) {
+      return response.data!;
     }
     
-    // Fallback Mock (so screen doesn't break if API fails)
     return {
       'code': 'OFFLINE',
       'list': [],
@@ -836,48 +556,12 @@ class AnchorService {
     };
   }
 
-  // ============ COMPLIANCE / TAX REPORTS ============
-  Future<List<Map<String, dynamic>>> getTaxReports() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (_taxReports.isEmpty) {
-      _taxReports.addAll([
-        {'id': 'RPT_001', 'name': "Q4 Trade Summary 2025", 'status': "Ready for export", 'date': '2025-12-31'},
-        {'id': 'RPT_002', 'name': "VAT Assessment - Dec 2025", 'status': "Review required", 'date': '2025-12-15'},
-        {'id': 'RPT_003', 'name': "Annual Compliance 2024", 'status': "Verified", 'date': '2024-12-31'},
-      ]);
-      await _saveToPersistence();
-    }
-    return List<Map<String, dynamic>>.from(_taxReports);
-  }
-
-  Future<void> generateTaxReport(String type) async {
-    await Future.delayed(const Duration(seconds: 3));
-    _taxReports.insert(0, {
-      'id': 'RPT_${DateTime.now().millisecondsSinceEpoch}', 
-      'name': "$type ${DateTime.now().year}", 
-      'status': "Processing", 
-      'date': DateTime.now().toIso8601String()
-    });
-    await _saveToPersistence();
-  }
-
   // ============ SECURITY & LIMITS ============
   
   Future<Map<String, dynamic>> getUserLimits() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id') ?? '1';
-      
-      final response = await http.get(
-        Uri.parse(AppApiConfig.settings), // Use settings which likely contains info or limits
-        headers: await _getHeaders(),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-    } catch (e) {
-      debugPrint("Get User Limits Error: $e");
+    final response = await _apiClient.get(AppApiConfig.settings);
+    if (response.success && response.data != null) {
+      return response.data!;
     }
     return {
       'tier': 1, 
@@ -888,22 +572,29 @@ class AnchorService {
   }
 
   Future<bool> isTransactionPinSet() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id') ?? '1';
-      
-      final response = await http.get(
-        Uri.parse(AppApiConfig.pinStatus),
-        headers: await _getHeaders(),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['is_pin_set'] == true;
-      }
-    } catch (e) {
-      debugPrint("Check PIN Status Error: $e");
+    final response = await _apiClient.get(AppApiConfig.pinStatus);
+    if (response.success && response.data != null) {
+      return response.data!['is_pin_set'] == true;
     }
     return false;
+  }
+
+  // ============ COMPLIANCE / TAX REPORTS ============
+  Future<List<Map<String, dynamic>>> getTaxReports() async {
+    final response = await _apiClient.get('${AppApiConfig.baseUrl}/tax_reports');
+    if (response.success && response.data != null) {
+      final dynamic rawData = response.data!['data'] ?? response.data!;
+      if (rawData is List) {
+        return List<Map<String, dynamic>>.from(rawData);
+      }
+    }
+    return [];
+  }
+
+  Future<void> generateTaxReport(String type) async {
+    await _apiClient.post(
+      '${AppApiConfig.baseUrl}/tax_reports/generate',
+      body: {'type': type},
+    );
   }
 }

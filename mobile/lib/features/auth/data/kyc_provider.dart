@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/anchor_service.dart';
 
 enum KYCStatus { none, pending, verified, rejected }
 enum KYBStatus { none, pending, verified, rejected }
@@ -149,6 +150,26 @@ class KYCProvider with ChangeNotifier {
 
   // Alias for backward compatibility
   Future<void> updateStatus(KYCStatus newStatus) => updateKycStatus(newStatus);
+
+  Future<Map<String, dynamic>> submitKYC({
+    required String docType,
+    required String filePath,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id') ?? '1'; // Defaulting to 1 if not found
+    
+    final result = await AnchorService().uploadKYCDocument(
+      userId: userId,
+      docType: docType,
+      filePath: filePath,
+    );
+
+    if (result['status'] == 'success') {
+      await updateKycStatus(KYCStatus.pending);
+    }
+    
+    return result;
+  }
 
   // Debug methods
   Future<void> debugForceVerify() async {

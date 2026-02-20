@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -84,7 +85,12 @@ class _TradeInsightsScreenState extends State<TradeInsightsScreen> {
             const SizedBox(height: 24),
 
             if (_isLoading) 
-              const Center(child: CircularProgressIndicator(color: AppColors.primary))
+              const Center(child: Padding(
+                padding: EdgeInsets.all(40.0),
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ))
+            else if (_insightsData == null || (_insightsData!['total_spent'] ?? 0) == 0)
+              _buildNoDataState()
             else ...[
               // Total Spending Card
               FadeInUp(
@@ -126,34 +132,37 @@ class _TradeInsightsScreenState extends State<TradeInsightsScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.trending_up,
+                    if (_insightsData?['trend'] != null) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  (_insightsData?['trend_up'] ?? true) ? Icons.trending_up : Icons.trending_down,
                                   color: Colors.white, size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                '+18% vs last month',
-                                style: GoogleFonts.outfit(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                                const SizedBox(width: 4),
+                                Text(
+                                  _insightsData?['trend'] ?? '',
+                                  style: GoogleFonts.outfit(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -161,38 +170,105 @@ class _TradeInsightsScreenState extends State<TradeInsightsScreen> {
 
             const SizedBox(height: 24),
 
-            // Spending by Country
-            FadeInUp(
-              delay: const Duration(milliseconds: 200),
-              child: _buildSection(
-                'Spending by Country',
-                Column(
-                  children: [
-                    _buildCountryBar('🇨🇳 China', 5200, 0.42, const Color(0xFFEF4444)),
-                    _buildCountryBar('🇮🇳 India', 3800, 0.31, const Color(0xFFF59E0B)),
-                    _buildCountryBar('🇦🇪 UAE', 2150, 0.17, const Color(0xFF3B82F6)),
-                    _buildCountryBar('🇹🇷 Turkey', 1300, 0.10, const Color(0xFF8B5CF6)),
-                  ],
+            // Spending by Category/Country (Luminous Ring)
+            if (_insightsData?['top_categories'] != null && (_insightsData?['top_categories'] as List).isNotEmpty)
+              FadeInUp(
+                delay: const Duration(milliseconds: 200),
+                child: _buildSection(
+                  'Spending Break-down',
+                  Column(
+                    children: [
+                      // Luminous Ring Chart
+                      SizedBox(
+                        height: 250,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Glowing Background for "Luminous" effect
+                            Container(
+                              height: 180,
+                              width: 180,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.2),
+                                    blurRadius: 40,
+                                    spreadRadius: 10,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            PieChart(
+                              PieChartData(
+                                sectionsSpace: 4,
+                                centerSpaceRadius: 60,
+                                sections: (_insightsData!['top_categories'] as List).map((cat) {
+                                  final isHigh = (cat['percent'] ?? 0) > 30;
+                                  return PieChartSectionData(
+                                    color: _getCategoryColor(cat['name'] ?? ''),
+                                    value: (cat['percent'] ?? 0).toDouble(),
+                                    title: '${(cat['percent'] ?? 0)}%',
+                                    radius: isHigh ? 35 : 30, // Make larger segments pop
+                                    titleStyle: GoogleFonts.outfit(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                            // Center Text
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text("Total", style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12)),
+                                Text(
+                                  "\$${(_insightsData?['total_spent'] ?? 0).toStringAsFixed(0)}", 
+                                  style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Legend / List
+                      Column(
+                        children: (_insightsData!['top_categories'] as List).map((cat) {
+                          return _buildCountryBar(
+                            cat['name'] ?? 'Unknown', 
+                            (cat['amount'] ?? 0.0).toDouble(), 
+                            (cat['percent'] ?? 0.0) / 100.0, 
+                            _getCategoryColor(cat['name'] ?? '')
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
             const SizedBox(height: 24),
 
             // Top Suppliers
-            FadeInUp(
-              delay: const Duration(milliseconds: 300),
-              child: _buildSection(
-                'Top Suppliers',
-                Column(
-                  children: [
-                    _buildSupplierRow('Guangzhou Trading Co.', '\$3,500', '🇨🇳'),
-                    _buildSupplierRow('Mumbai Textiles Ltd', '\$2,800', '🇮🇳'),
-                    _buildSupplierRow('Dubai Electronics FZE', '\$2,150', '🇦🇪'),
-                  ],
+            if (_insightsData?['top_suppliers'] != null && (_insightsData?['top_suppliers'] as List).isNotEmpty)
+              FadeInUp(
+                delay: const Duration(milliseconds: 300),
+                child: _buildSection(
+                  'Key Partners',
+                  Column(
+                    children: (_insightsData!['top_suppliers'] as List).map((sup) {
+                      return _buildSupplierRow(
+                        sup['name'] ?? 'Supplier', 
+                        '\$${(sup['amount'] ?? 0).toStringAsFixed(0)}', 
+                        sup['flag'] ?? '🌐'
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
-            ),
 
             const SizedBox(height: 24),
 
@@ -386,6 +462,60 @@ class _TradeInsightsScreenState extends State<TradeInsightsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Color _getCategoryColor(String name) {
+    switch (name.toLowerCase()) {
+      case 'china': case 'logistics': return const Color(0xFFEF4444);
+      case 'india': case 'raw materials': return const Color(0xFFF59E0B);
+      case 'uae': case 'marketing': return const Color(0xFF3B82F6);
+      case 'turkey': case 'operations': return const Color(0xFF8B5CF6);
+      default: return AppColors.primary;
+    }
+  }
+
+  Widget _buildNoDataState() {
+    return FadeInUp(
+      child: Center(
+        child: Column(
+          children: [
+            const SizedBox(height: 60),
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.glassBorder),
+              ),
+              child: const Icon(Icons.bar_chart_rounded, color: AppColors.featureInsights, size: 80),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              "Gathering Insights...",
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                "Once you start trading and making payments, we'll provide deep insights into your supply chain performance and savings.",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  color: AppColors.textSecondary,
+                  fontSize: 15,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }

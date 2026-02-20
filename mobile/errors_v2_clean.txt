@@ -1,0 +1,10 @@
+error - Undefined name '_anchorService' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:512:35 - undefined_identifier
+error - Undefined name '_anchorService' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:513:35 - undefined_identifier
+error - The method '_loadCards' isn't defined for the type '_HolographicCardState' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:515:23 - undefined_method
+error - The method '_buildModalField' isn't defined for the type '_HolographicCardState' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:583:13 - undefined_method
+error - Undefined name '_anchorService' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:590:25 - undefined_identifier
+error - The method '_loadCards' isn't defined for the type '_HolographicCardState' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:592:19 - undefined_method
+error - 1 positional argument expected by 'payBill', but 0 found - lib\features\home\presentation\pages\home_screen.dart:1054:34 - not_enough_positional_arguments
+error - The named parameter 'type' isn't defined - lib\features\home\presentation\pages\home_screen.dart:1054:34 - undefined_named_parameter
+error - The named parameter 'amount' isn't defined - lib\features\home\presentation\pages\home_screen.dart:1054:46 - undefined_named_parameter
+error - The named parameter 'reference' isn't defined - lib\features\home\presentation\pages\home_screen.dart:1054:60 - undefined_named_parameter

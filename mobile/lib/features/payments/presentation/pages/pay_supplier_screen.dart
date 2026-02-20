@@ -2,7 +2,8 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/services/settlement_service.dart';
+import '../../../../core/services/anchor_service.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/pin_verification_modal.dart';
 
 class PaySupplierScreen extends StatefulWidget {
@@ -16,7 +17,7 @@ class _PaySupplierScreenState extends State<PaySupplierScreen> {
   final _amountController = TextEditingController();
   final _recipientController = TextEditingController();
   final _bankController = TextEditingController();
-  final _settlementService = SettlementService();
+  final _anchorService = AnchorService();
   String _selectedCurrency = 'USD';
   bool isProcessingPayment = false;
   double _exchangeRate = 1.0; // Default pending dynamic rates
@@ -82,32 +83,40 @@ class _PaySupplierScreenState extends State<PaySupplierScreen> {
   }
 
   void _executeTransaction(double amount) async {
-    setState(() {
-      isProcessingPayment = true;
-    });
+    // Show Cinematic Processing Bridge
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => Dialog(
+        backgroundColor: AppColors.background,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: const Padding(
+           padding: EdgeInsets.all(24.0),
+           child: PaymentBridgeAnimation(),
+        ),
+      ),
+    );
 
     try {
-      final result = await _settlementService.paySupplier(
+      // Simulate network delay for cinematic effect
+      await Future.delayed(const Duration(seconds: 3));
+      
+      final result = await _anchorService.paySupplier(
         amount: amount,
         currency: _selectedCurrency,
         recipient: _recipientController.text,
         destination: _bankController.text,
       );
 
-
       if (mounted) {
-        setState(() {
-          isProcessingPayment = false;
-        });
+        Navigator.pop(context); // Dismiss Bridge
         if (result['status'] == 'success') {
           _showSuccessDialog();
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          isProcessingPayment = false;
-        });
+        Navigator.pop(context); // Dismiss Bridge
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Payment failed: $e")),
         );
@@ -328,6 +337,113 @@ class _PaySupplierScreenState extends State<PaySupplierScreen> {
           labelStyle: const TextStyle(color: Colors.white54),
         ),
       ),
+    );
+  }
+}
+
+class PaymentBridgeAnimation extends StatefulWidget {
+  const PaymentBridgeAnimation({super.key});
+
+  @override
+  State<PaymentBridgeAnimation> createState() => _PaymentBridgeAnimationState();
+}
+
+class _PaymentBridgeAnimationState extends State<PaymentBridgeAnimation> with TickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late AnimationController _rotationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _rotationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 120,
+          width: 120,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              RotationTransition(
+                turns: _rotationController,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.2),
+                      width: 2,
+                    ),
+                  ),
+                  height: 100,
+                  width: 100,
+                ),
+              ),
+              ScaleTransition(
+                scale: Tween(begin: 0.8, end: 1.2).animate(
+                  CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+                ),
+                child: Container(
+                  height: 60,
+                  width: 60,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      )
+                    ],
+                  ),
+                  child: const Icon(Icons.security, color: AppColors.primary, size: 30),
+                ),
+              ),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                strokeWidth: 2,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          "Securing Transaction...",
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Verification in progress",
+          style: GoogleFonts.outfit(
+            color: AppColors.textMuted,
+            fontSize: 14,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -14,7 +14,7 @@ class SwapScreen extends StatefulWidget {
   State<SwapScreen> createState() => _SwapScreenState();
 }
 
-class _SwapScreenState extends State<SwapScreen> {
+class _SwapScreenState extends State<SwapScreen> with SingleTickerProviderStateMixin {
   final _amountController = TextEditingController();
   final _anchorService = AnchorService();
   final _securityService = SecurityService();
@@ -33,9 +33,25 @@ class _SwapScreenState extends State<SwapScreen> {
     'daily_limit': 1000.0,
   };
 
+  late AnimationController _flipController;
+  late Animation<double> _flipAnimation;
+
+  double get _convertedAmount {
+    final amount = double.tryParse(_amountController.text) ?? 0;
+    return amount * _rate;
+  }
+
   @override
   void initState() {
     super.initState();
+    _flipController = AnimationController(
+      vsync: this, 
+      duration: const Duration(milliseconds: 800),
+    );
+    _flipAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _flipController, curve: Curves.easeInOutBack),
+    );
+    
     _updateRate();
     _fetchLimits();
     _amountController.addListener(_updateFee);
@@ -44,117 +60,113 @@ class _SwapScreenState extends State<SwapScreen> {
   @override
   void dispose() {
     _amountController.dispose();
+    _flipController.dispose();
     super.dispose();
   }
 
   Future<void> _fetchLimits() async {
-    final limits = await _anchorService.getUserLimits();
-    if (mounted) {
-      setState(() => _limits = limits);
+    try {
+      final limits = await _anchorService.getUserLimits();
+      if (mounted) {
+        setState(() {
+          _limits = limits;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching limits: $e');
     }
   }
 
   Future<void> _updateRate() async {
     setState(() => _isLoadingRate = true);
     try {
-      final rate = await _anchorService.getExchangeRate(_fromCurrency, _toCurrency);
+      final rates = await _anchorService.getMarketRates();
+      final pair = '${_fromCurrency}_$_toCurrency';
       if (mounted) {
         setState(() {
-          _rate = rate;
+          _rate = (rates[pair] as num?)?.toDouble() ?? 1.0;
           _isLoadingRate = false;
+          _updateFee();
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingRate = false);
-      }
+      debugPrint('Error fetching rate: $e');
+      if (mounted) setState(() => _isLoadingRate = false);
     }
   }
 
   void _updateFee() {
-    final amount = double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0;
+    final amount = double.tryParse(_amountController.text) ?? 0;
     setState(() {
       _fee = amount * 0.005; // 0.5% fee
     });
   }
 
-  double get _convertedAmount {
-    final amount = double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0;
-    return amount * _rate;
-  }
-
   void _swapCurrencies() {
-    setState(() {
-      final temp = _fromCurrency;
-      _fromCurrency = _toCurrency;
-      _toCurrency = temp;
-      _updateRate();
+    if (_flipController.isAnimating) return;
+    
+    if (_flipController.status == AnimationStatus.dismissed) {
+      _flipController.forward();
+    } else {
+      _flipController.reverse();
+    }
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        setState(() {
+          final temp = _fromCurrency;
+          _fromCurrency = _toCurrency;
+          _toCurrency = temp;
+          _updateRate();
+        });
+      }
     });
   }
 
-  void _handleSwapRequest() async {
-    final amountText = _amountController.text.replaceAll(',', '');
-    final amount = double.tryParse(amountText) ?? 0;
-    
+  Future<void> _handleSwapRequest() async {
+    final amount = double.tryParse(_amountController.text) ?? 0;
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a valid amount")),
+        const SnackBar(content: Text('Please enter a valid amount')),
       );
       return;
     }
 
-    // NEW: Check if PIN is set, otherwise redirect to settings (or just inform)
-    final pinStatus = await _securityService.checkPinStatus();
-    if (pinStatus['is_pin_set'] == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please set a transaction PIN in Profile > Security first.")),
-      );
-      return;
-    }
-
-    // NEW: Show Security Prompt
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => SecurityPrompt(
-        onAuthenticated: (success) {
-          if (success) {
-            Navigator.pop(context);
-            _executeSwap(amount);
-          }
-        },
-      ),
+    final pin = await SecurityPrompt.show(
+      context,
+      title: 'Confirm Swap',
     );
+
+    if (pin != null) {
+      _executeSwap(amount, pin);
+    }
   }
 
-  void _executeSwap(double amount) async {
+  Future<void> _executeSwap(double amount, String? pin) async {
     setState(() => _isLoading = true);
-    
     try {
       final result = await _anchorService.swapCurrency(
+        from: _fromCurrency,
+        to: _toCurrency,
         amount: amount,
-        fromCurrency: _fromCurrency,
-        toCurrency: _toCurrency,
+        transactionPin: pin,
       );
-      
       if (mounted) {
         setState(() => _isLoading = false);
-        if (result['status'] == 'success') {
-          _showSuccessDialog({
-            ...result,
-            'from_currency': _fromCurrency,
-            'to_currency': _toCurrency,
-            'amount': amount, // for receipt
-          });
-          _fetchLimits(); // Refresh limits after spend
+        if (result['status'] == 'error') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Swap failed')),
+          );
+        } else {
+          _showSuccessDialog(result);
+          _amountController.clear();
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Swap failed: $e")),
+          SnackBar(content: Text('Swap failed: $e')),
         );
       }
     }
@@ -165,61 +177,22 @@ class _SwapScreenState extends State<SwapScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          "Swap Currencies",
-          style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: Text('Currency Swap', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // NEW: Limits Banner
-            FadeInDown(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.shield_outlined, color: AppColors.primary, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Tier ${_limits['tier'] ?? 1} Limits",
-                            style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            "Daily Remaining: \$${(_limits['remaining_daily'] ?? 0.0).toStringAsFixed(2)}",
-                            style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {}, // Navigate to KYC
-                      child: Text("Upgrade", style: GoogleFonts.outfit(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            
+            // 3D Flip Swap Card
             _buildSwapCard(),
+
             const SizedBox(height: 40),
             
             FadeInUp(
@@ -272,41 +245,74 @@ class _SwapScreenState extends State<SwapScreen> {
   }
 
   Widget _buildSwapCard() {
-    return FadeInDown(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Column(
+    return AnimatedBuilder(
+      animation: _flipAnimation,
+      builder: (context, child) {
+        final angle = _flipAnimation.value * 3.14159;
+        
+        final transform = Matrix4.identity()
+          ..setEntry(3, 2, 0.001)
+          ..rotateX(angle);
+
+        final isBack = angle > 1.57;
+
+        return Transform(
+          transform: transform,
+          alignment: Alignment.center,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              _buildCurrencyInput("From", _fromCurrency, true),
-              const SizedBox(height: 12),
-              _buildCurrencyInput("To", _toCurrency, false),
+              Transform(
+                transform: Matrix4.identity()..rotateX(isBack ? -3.14159 : 0),
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    _buildCurrencyInput("From", _fromCurrency, true, isTop: true),
+                    const SizedBox(height: 12),
+                    _buildCurrencyInput("To", _toCurrency, false, isTop: false),
+                  ],
+                ),
+              ),
+
+              GestureDetector(
+                onTap: _swapCurrencies,
+                child: Transform.rotate(
+                  angle: -angle,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.background, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.secondary.withOpacity(0.4),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        )
+                      ]
+                    ),
+                    child: const Icon(Icons.swap_vert_rounded, color: Colors.white, size: 28),
+                  ),
+                ),
+              ),
             ],
           ),
-          GestureDetector(
-            onTap: _swapCurrencies,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.secondary,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.background, width: 4),
-              ),
-              child: const Icon(Icons.swap_vert_rounded, color: Colors.white, size: 28),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildCurrencyInput(String label, String currency, bool isInput) {
+  Widget _buildCurrencyInput(String label, String currency, bool isInput, {required bool isTop}) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.glassBorder),
+        boxShadow: isTop ? [] : [
+           BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
+        ]
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,13 +434,12 @@ class _SwapScreenState extends State<SwapScreen> {
             Text("Swap Successful!", style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
-              "Converted ${result['from_amount']} ${result['from_currency']} to ${result['to_amount'].toStringAsFixed(2)} ${result['to_currency']}",
+              "Converted ${result['from_amount']} ${result['from_currency']} to ${result['to_amount']?.toStringAsFixed(2) ?? '0.00'} ${result['to_currency']}",
               textAlign: TextAlign.center, 
               style: GoogleFonts.outfit(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             
-            // NEW: Share Receipt Button
             OutlinedButton.icon(
               onPressed: () {
                 Navigator.pop(c);

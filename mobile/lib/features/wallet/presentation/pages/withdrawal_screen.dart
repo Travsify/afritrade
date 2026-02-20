@@ -5,8 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/constants/api_config.dart';
-import '../../../../core/services/anchor_service.dart';
+import 'package:afritrad_mobile/core/services/anchor_service.dart';
 import '../../../auth/presentation/widgets/pin_verification_modal.dart';
 import 'withdrawal_history_screen.dart';
 

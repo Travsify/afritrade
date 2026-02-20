@@ -105,9 +105,13 @@ class _BulkPaymentScreenState extends State<BulkPaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double totalAmount = _pendingPayments
-        .where((p) => _selectedIds.contains(p['id']) && p['currency'] == 'USD')
-        .fold(0, (sum, p) => sum + p['amount']);
+    Map<String, double> currencyTotals = {};
+    for (var p in _pendingPayments) {
+      if (_selectedIds.contains(p['id'])) {
+        String curr = p['currency'] ?? 'USD';
+        currencyTotals[curr] = (currencyTotals[curr] ?? 0.0) + (p['amount'] ?? 0.0);
+      }
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -122,7 +126,7 @@ class _BulkPaymentScreenState extends State<BulkPaymentScreen> {
       ),
       body: Column(
         children: [
-          _buildSummaryCard(totalAmount),
+          _buildSummaryCard(currencyTotals),
           Expanded(
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
@@ -147,7 +151,7 @@ class _BulkPaymentScreenState extends State<BulkPaymentScreen> {
     );
   }
 
-  Widget _buildSummaryCard(double total) {
+  Widget _buildSummaryCard(Map<String, double> totals) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(20),
@@ -163,12 +167,23 @@ class _BulkPaymentScreenState extends State<BulkPaymentScreen> {
       ),
       child: Column(
         children: [
-          Text("Batch Total (Selected USD)", style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14)),
-          const SizedBox(height: 8),
-          Text(
-            "\$${total.toStringAsFixed(2)}",
-            style: GoogleFonts.outfit(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-          ),
+          Text("Batch Totals (Selected)", style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14)),
+          const SizedBox(height: 12),
+          if (totals.isEmpty)
+             Text(
+              "\$0.00",
+              style: GoogleFonts.outfit(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+            )
+          else
+            Column(
+              children: totals.entries.map((e) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  "${e.key} ${e.value.toStringAsFixed(2)}",
+                  style: GoogleFonts.outfit(color: Colors.white, fontSize: e.key == 'USD' ? 32 : 24, fontWeight: FontWeight.bold),
+                ),
+              )).toList(),
+            ),
           const SizedBox(height: 12),
           Text(
             "${_selectedIds.length} payments selected",

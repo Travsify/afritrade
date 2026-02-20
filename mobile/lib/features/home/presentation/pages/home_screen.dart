@@ -32,6 +32,8 @@ import 'package:afritrad_mobile/features/invoices/presentation/pages/invoices_sc
 import 'package:afritrad_mobile/features/wallet/presentation/pages/withdrawal_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:afritrad_mobile/features/auth/data/kyc_provider.dart';
+import 'package:afritrad_mobile/features/auth/presentation/pages/kyc_required_screen.dart';
+import 'package:afritrad_mobile/core/widgets/money_text.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -249,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         _selectedAccount = accounts.first;
                       }
 
-                      return _buildAccountCard();
+                      return _buildBalanceOrb();
                     },
                   ),
                   SizedBox(height: 32),
@@ -257,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   SizedBox(height: 32),
                   _buildNewsTicker(),
                   SizedBox(height: 32),
-                  _buildQuickActionsGrid(),
+                  _buildQuickActionsRing(),
                   SizedBox(height: 32),
                   _buildFeatureGrid(),
                   SizedBox(height: 32),
@@ -316,9 +318,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             ElevatedButton(
               onPressed: () {
-                // Navigate to KYC/KYB flow
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Redirecting to verification flow..."))
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const KYCRequiredScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -470,146 +472,280 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildAccountCard() {
+  Widget _buildBalanceOrb() {
     if (_selectedAccount == null) return SizedBox.shrink();
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Color(0xFF0F3D2E),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xFF0F3D2E).withOpacity(0.5),
-            blurRadius: 20,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: ValueListenableBuilder<List<Map<String, dynamic>>>(
-                  valueListenable: _anchorService.accountsNotifier,
-                  builder: (context, accounts, _) {
-                    return DropdownButtonHideUnderline(
-                      child: DropdownButton<Map<String, dynamic>>(
-                        value: _selectedAccount,
-                        dropdownColor: AppColors.surface,
-                        icon: Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 16),
-                        style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
-                        onChanged: (newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              _selectedAccount = newValue;
-                            });
-                          }
-                        },
-                        items: accounts.map((account) {
-                          return DropdownMenuItem<Map<String, dynamic>>(
-                            value: account,
-                            child: Row(
-                              children: [
-                                Text(account['currency'] ?? 'NGN'),
-                                SizedBox(width: 8),
-                                Text(
-                                  account['label'] ?? '', 
-                                  style: TextStyle(fontWeight: FontWeight.normal, fontSize: 12, color: Colors.white70)
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    );
-                  }
-                ),
+    return Center(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => AccountsScreen()));
+        },
+        child: Container(
+          width: 280,
+          height: 280,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: AppColors.darkGradient,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.2),
+                blurRadius: 50,
+                spreadRadius: -10,
               ),
-              SvgPicture.asset(
-                'assets/icons/mastercard.svg',
-                height: 24,
-                placeholderBuilder: (_) => Icon(Icons.credit_card, color: Colors.white54),
-              )
+              BoxShadow(
+                color: AppColors.secondary.withOpacity(0.1),
+                blurRadius: 30,
+                spreadRadius: 10,
+              ),
             ],
           ),
-          SizedBox(height: 24),
-          Text(
-            "Total Balance",
-            style: GoogleFonts.outfit(color: Colors.white54, fontSize: 14),
-          ),
-          SizedBox(height: 8),
-          Row(
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              Text(
-                _balanceVisible 
-                  ? "${_selectedAccount!['currency']} ${(_selectedAccount!['balance'] ?? 0).toStringAsFixed(2)}" 
-                  : "****",
+              // Rotating Glow Ring (Simulated with simple container for now)
+              Container(
+                width: 278,
+                height: 278,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+              ),
+              
+              // Glass Orb Surface
+              Container(
+                width: 240,
+                height: 240,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.glassBackground,
+                  border: Border.all(color: AppColors.glassBorder),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Total Balance",
+                      style: GoogleFonts.outfit(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        MoneyText(
+                          amount: _selectedAccount!['balance'] ?? 0.0,
+                          currency: _selectedAccount!['currency'] ?? 'USD',
+                          size: 36,
+                          fontWeight: FontWeight.bold,
+                          visibility: _balanceVisible ? MoneyVisibility.visible : MoneyVisibility.hidden,
+                        ),
+                        SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => setState(() => _balanceVisible = !_balanceVisible),
+                          child: Icon(
+                            _balanceVisible ? Iconsax.eye : Iconsax.eye_slash,
+                            color: AppColors.textMuted,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6, height: 6,
+                            decoration: BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            _selectedAccount!['currency'] ?? 'USD',
+                            style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                          Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary, size: 14),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showUpgradeDialog(String action) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        contentPadding: EdgeInsets.zero,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              decoration: BoxDecoration(
+                color: AppColors.amber.withOpacity(0.1),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.amber.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.lock_person_rounded, color: AppColors.amber, size: 48),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+              child: Text(
+                "Upgrade to Elite",
                 style: GoogleFonts.outfit(
                   color: Colors.white,
-                  fontSize: 32,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(width: 12),
-              IconButton(
-                onPressed: () => setState(() => _balanceVisible = !_balanceVisible),
-                icon: Icon(
-                  _balanceVisible ? Iconsax.eye : Iconsax.eye_slash,
-                  color: Colors.white54,
-                  size: 20,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                "To access $action and other premium trade features, we need to verify your business identity. This is a one-time process for global compliance.",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  height: 1.5,
                 ),
               ),
-            ],
-          ),
-          SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Account Number", style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12)),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          _selectedAccount!['account_number'] ?? 'Wallet Only',
-                          style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(Icons.copy, color: Colors.white54, size: 14),
-                      ],
+            ),
+            const SizedBox(height: 32),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        "Maybe Later",
+                        style: GoogleFonts.outfit(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text("Bank Name", style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12)),
-                    SizedBox(height: 4),
-                    Text(
-                      _selectedAccount!['bank_name'] ?? 'Anchor',
-                      style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const KYCRequiredScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Text(
+                        "Verify Now",
+                        style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsRing() {
+    final actions = [
+      {'icon': Iconsax.convert_card, 'label': 'Swap', 'color': AppColors.actionSend, 'page': SwapScreen()},
+      {'icon': Iconsax.export_1, 'label': 'Send', 'color': AppColors.actionFund, 'page': PaySupplierScreen()},
+      {'icon': Iconsax.import, 'label': 'Receive', 'color': AppColors.actionAccounts, 'page': FundWalletScreen()},
+      {'icon': Iconsax.bill, 'label': 'Bills', 'color': AppColors.actionCards, 'page': null, 'action': () => _showBillsDialog()},
+    ];
+
+    final kycProvider = Provider.of<KYCProvider>(context, listen: false);
+    
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: actions.map((action) {
+          bool isRestricted = !kycProvider.isVerified && (action['label'] == 'Swap' || action['label'] == 'Send');
+          Color actionColor = action['color'] as Color;
+          
+          return GestureDetector(
+            onTap: isRestricted ? () => _showUpgradeDialog(action['label'] as String) : () {
+              if (action['action'] != null) {
+                (action['action'] as VoidCallback)();
+              } else if (action['page'] != null) {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => action['page'] as Widget));
+              }
+            },
+            child: Column(
+              children: [
+                Container(
+                  height: 64,
+                  width: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.background, // Inner dark circle
+                    shape: BoxShape.circle, 
+                    border: Border.all(color: actionColor.withOpacity(0.3), width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                         color: actionColor.withOpacity(0.15),
+                         blurRadius: 15,
+                         spreadRadius: 2,
+                      )
+                    ]
+                  ),
+                  child: Icon(action['icon'] as IconData, color: actionColor, size: 26),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  action['label'] as String,
+                  style: GoogleFonts.outfit(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -629,14 +765,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         bool isRestricted = !kycProvider.isVerified && (action['label'] == 'Swap' || action['label'] == 'Send');
         
         return GestureDetector(
-          onTap: isRestricted ? () {
-             ScaffoldMessenger.of(context).showSnackBar(
-               SnackBar(
-                 content: Text("Please complete verification to use ${action['label']}"),
-                 backgroundColor: AppColors.amber,
-               )
-             );
-          } : () {
+          onTap: isRestricted ? () => _showUpgradeDialog(action['label'] as String) : () {
             if (action['action'] != null) {
               (action['action'] as VoidCallback)();
             } else if (action['page'] != null) {
@@ -998,22 +1127,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         SizedBox(height: 12),
         SizedBox(
           height: 100,
-          child: FutureBuilder<List<Map<String, dynamic>>>(
+          child: FutureBuilder<Map<String, dynamic>>(
             future: _anchorService.getMarketRates(),
             builder: (context, snapshot) {
                if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: AppColors.primary));
                
+               final ratesMap = snapshot.data!;
+               final rateList = ratesMap.entries.map((e) {
+                 final parts = e.key.split('_');
+                 return {
+                   'from': parts.length > 0 ? parts[0] : '?',
+                   'to': parts.length > 1 ? parts[1] : '?',
+                   'rate': e.value,
+                   'change': 0.0, // Default change if not provided
+                 };
+               }).toList();
+
                return ListView(
                 scrollDirection: Axis.horizontal,
                 physics: BouncingScrollPhysics(),
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                children: snapshot.data!.map((rate) {
+                children: rateList.map((rate) {
                    return _buildRateCard(
-                     rate['from'], 
-                     rate['to'], 
+                     rate['from'] as String, 
+                     rate['to'] as String, 
                      rate['rate'].toString(), 
                      (rate['change'] as double) >= 0, 
-                     (rate['change'] as double) >= 0 ? AppColors.success : AppColors.error // Simplified color logic
+                     (rate['change'] as double) >= 0 ? AppColors.success : AppColors.error
                    );
                 }).toList(),
               );

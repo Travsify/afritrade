@@ -1,0 +1,15 @@
+error - The method 'getBeneficiaries' isn't defined for the type 'AnchorService' - lib\features\beneficiaries\presentation\pages\saved_beneficiaries_screen.dart:29:20 - undefined_method
+error - The method 'addBeneficiary' isn't defined for the type 'AnchorService' - lib\features\beneficiaries\presentation\pages\saved_beneficiaries_screen.dart:359:20 - undefined_method
+error - The method '_showCardDetails' isn't defined for the type '_VirtualCardsScreenState' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:192:22 - undefined_method
+error - Undefined name '_anchorService' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:398:35 - undefined_identifier
+error - Undefined name '_anchorService' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:399:35 - undefined_identifier
+error - The method '_loadCards' isn't defined for the type '_HolographicCardState' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:401:23 - undefined_method
+error - The method '_buildModalField' isn't defined for the type '_HolographicCardState' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:469:13 - undefined_method
+error - Undefined name '_anchorService' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:476:25 - undefined_identifier
+error - The method '_loadCards' isn't defined for the type '_HolographicCardState' - lib\features\cards\presentation\pages\virtual_cards_screen.dart:478:19 - undefined_method
+error - The method 'payBill' isn't defined for the type 'AnchorService' - lib\features\home\presentation\pages\home_screen.dart:1054:26 - undefined_method
+error - The argument type 'Future<Map<String, dynamic>>' can't be assigned to the parameter type 'Future<List<Map<String, dynamic>>>?'.  - lib\features\home\presentation\pages\home_screen.dart:1131:21 - argument_type_not_assignable
+error - The named parameter 'shadows' isn't defined - lib\features\insights\presentation\pages\trade_insights_screen.dart:218:37 - undefined_named_parameter
+error - Invalid constant value - lib\features\payments\presentation\pages\pay_supplier_screen.dart:95:19 - invalid_constant
+error - The method 'PaymentBridgeAnimation' isn't defined for the type '_PaySupplierScreenState' - lib\features\payments\presentation\pages\pay_supplier_screen.dart:95:19 - undefined_method
+error - The method 'show' isn't defined for the type 'SecurityPrompt' - lib\features\swap\presentation\pages\swap_screen.dart:135:43 - undefined_method

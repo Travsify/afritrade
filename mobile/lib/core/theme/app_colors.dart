@@ -5,21 +5,27 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // ============ BASE COLORS ============
+  // ============ BASE COLORS (DEEP SPACE) ============
   
+  /// Void - True black for modals and depth
+  static const Color voidColor = Color(0xFF080816);
+
   /// Deep space - Main background color
   static const Color background = Color(0xFF0F0F23);
   
-  /// Elevated background - Card surfaces
-  static const Color surface = Color(0xFF1A1A2E);
+  /// Nebula - Elevated background for cards
+  static const Color surface = Color(0xFF141432);
   
-  /// Lighter surface for elevated cards
-  static const Color surfaceLight = Color(0xFF252542);
+  /// Atmosphere - Lighter interactive surface
+  static const Color surfaceLight = Color(0xFF1E1E3F);
 
-  // ============ PRIMARY GRADIENT ============
+  // ============ PRIMARY GRADIENT (GLOBAL LINE) ============
   
   /// Indigo - Primary gradient start
-  static const Color primary = Color(0xFF6366F1);
+  static const Color primary = Color(0xFF4F46E5);
+  
+  /// Violet - Middle gradient
+  static const Color primaryMid = Color(0xFF7C3AED);
   
   /// Cyan - Primary gradient end
   static const Color secondary = Color(0xFF06B6D4);
@@ -37,6 +43,32 @@ class AppColors {
   
   /// Amber/Gold - Warning and fund actions
   static const Color amber = Color(0xFFF59E0B);
+
+  // ============ CURRENCY IDENTITIES ============
+  
+  /// Naira Green (NGN)
+  static const Color currencyNGN = Color(0xFF00D09C);
+  
+  /// Dollar Blue (USD)
+  static const Color currencyUSD = Color(0xFF3B82F6);
+  
+  /// Renminbi Gold (CNY)
+  static const Color currencyCNY = Color(0xFFF59E0B);
+  
+  /// Rand Red (ZAR)
+  static const Color currencyZAR = Color(0xFFEF4444);
+  
+  /// Euro Violet (EUR)
+  static const Color currencyEUR = Color(0xFF8B5CF6);
+  
+  /// Pound Cyan (GBP)
+  static const Color currencyGBP = Color(0xFF06B6D4);
+  
+  /// Cedi Orange (GHS)
+  static const Color currencyGHS = Color(0xFFF97316);
+  
+  /// Dirham Rose (AED)
+  static const Color currencyAED = Color(0xFFEC4899);
 
   // ============ SEMANTIC COLORS ============
   
@@ -62,9 +94,9 @@ class AppColors {
 
   // ============ GRADIENTS ============
   
-  /// Primary gradient - Purple to Cyan
+  /// Signature "GlobalLine" Gradient - Indigo to Cyan
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primary, secondary],
+    colors: [primary, primaryMid, secondary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -72,8 +104,8 @@ class AppColors {
   /// Balance card gradient - More vibrant
   static const LinearGradient balanceCardGradient = LinearGradient(
     colors: [
-      Color(0xFF6366F1),
-      Color(0xFF8B5CF6),
+      Color(0xFF4F46E5),
+      Color(0xFF7C3AED),
       Color(0xFF06B6D4),
     ],
     begin: Alignment.topLeft,
@@ -90,8 +122,8 @@ class AppColors {
   /// Dark gradient for overlays
   static const LinearGradient darkGradient = LinearGradient(
     colors: [
+      Color(0xFF080816),
       Color(0xFF0F0F23),
-      Color(0xFF1A1A2E),
     ],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
@@ -103,7 +135,7 @@ class AppColors {
   static Color glassBackground = Colors.white.withOpacity(0.08);
   
   /// Glass border color
-  static Color glassBorder = Colors.white.withOpacity(0.15);
+  static Color glassBorder = Colors.white.withOpacity(0.12);
 
   // ============ QUICK ACTION COLORS ============
   

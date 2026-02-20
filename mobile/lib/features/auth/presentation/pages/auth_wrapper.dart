@@ -25,10 +25,8 @@ class AuthWrapper extends StatelessWidget {
       return const LoginScreen();
     }
     
-    if (kycProvider.isVerified) {
-      return const HomeScreen();
-    } else {
-      return const KYCRequiredScreen();
-    }
+    // Allow navigation to HomeScreen for all logged-in users.
+    // KYC status is now handled via feature gating and banners on the dashboard.
+    return const HomeScreen();
   }
 }

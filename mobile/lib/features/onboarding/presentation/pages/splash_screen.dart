@@ -106,7 +106,7 @@ class _SplashScreenState extends State<SplashScreen>
               animation: _particleController,
               builder: (context, child) {
                 return CustomPaint(
-                  painter: ParticlePainter(
+                  painter: TradeNetworkPainter(
                     animation: _particleController.value,
                   ),
                   size: Size.infinite,
@@ -261,58 +261,79 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// Particle painter for animated background
-class ParticlePainter extends CustomPainter {
+// Cinematic Trade Route Painter
+class TradeNetworkPainter extends CustomPainter {
   final double animation;
-  final Random random = Random(42); // Fixed seed for consistent particles
+  final Random random = Random(42); // Fixed seed
 
-  ParticlePainter({required this.animation});
+  TradeNetworkPainter({required this.animation});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
+    final center = Offset(size.width / 2, size.height / 2);
+    final paint = Paint()..style = PaintingStyle.stroke;
 
-    // Draw connection lines and particles
-    for (int i = 0; i < 30; i++) {
-      final baseX = (random.nextDouble() * size.width);
-      final baseY = (random.nextDouble() * size.height);
+    // 1. Draw Radar Waves (concentric circles extending from center)
+    for (int i = 0; i < 3; i++) {
+      final waveProgress = (animation + (i * 0.33)) % 1.0;
+      final radius = waveProgress * size.width * 0.8;
+      final opacity = (1.0 - waveProgress).clamp(0.0, 1.0);
+      
+      paint.color = const Color(0xFF10B981).withOpacity(opacity * 0.1);
+      paint.strokeWidth = 1;
+      paint.style = PaintingStyle.stroke;
+      canvas.drawCircle(center, radius, paint);
+    }
 
-      // Animate position
-      final x = baseX + sin((animation * 2 * pi) + i) * 20;
-      final y = baseY + cos((animation * 2 * pi) + i * 0.5) * 15;
+    // 2. Draw "Trade Routes" (Curved lines from center to random points)
+    paint.style = PaintingStyle.stroke;
+    paint.strokeCap = StrokeCap.round;
+    
+    for (int i = 0; i < 12; i++) {
+      // Destination points on a virtual globe/circle
+      final angle = (i * (360 / 12)) * (pi / 180);
+      final dist = size.width * 0.4 + (random.nextDouble() * 50);
+      final destX = center.dx + cos(angle) * dist;
+      final destY = center.dy + sin(angle) * dist;
+      final dest = Offset(destX, destY);
 
-      // Particle size based on position
-      final particleSize = 2.0 + random.nextDouble() * 3;
+      // Draw faint route line
+      paint.color = Colors.white.withOpacity(0.05);
+      paint.strokeWidth = 1;
+      canvas.drawLine(center, dest, paint);
 
-      // Color variation
-      final isGreen = i % 3 == 0;
-      final isOrange = i % 5 == 0;
+      // Draw moving packet/ship along the route
+      final routeProgress = (animation * (1.0 + random.nextDouble())) % 1.0;
+      // Calculate current position on the line
+      final currX = center.dx + (destX - center.dx) * routeProgress;
+      final currY = center.dy + (destY - center.dy) * routeProgress;
+      
+      // Draw packet
+      paint.style = PaintingStyle.fill;
+      paint.color = i % 2 == 0 ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+      paint.color = paint.color.withOpacity(0.6 * (1.0 - routeProgress)); // Fade as it goes out
+      canvas.drawCircle(Offset(currX, currY), 3, paint);
+      
+      // Draw destination node
+      paint.color = Colors.white.withOpacity(0.2);
+      canvas.drawCircle(dest, 4, paint);
+    }
 
-      paint.color = isOrange
-          ? const Color(0xFFF59E0B).withOpacity(0.3 + random.nextDouble() * 0.2)
-          : isGreen
-              ? const Color(0xFF10B981)
-                  .withOpacity(0.3 + random.nextDouble() * 0.2)
-              : Colors.white
-                  .withOpacity(0.1 + random.nextDouble() * 0.15);
+    // 3. Ambient Particles (Stars/City Lights)
+    paint.style = PaintingStyle.fill;
+    for (int i = 0; i < 40; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      // Parallax-ish movement
+      final shiftY = (animation * 50 * (i % 2 == 0 ? 1 : -1)); 
+      final dy = (y + shiftY) % size.height;
 
-      canvas.drawCircle(Offset(x, y), particleSize, paint);
-
-      // Draw subtle connection lines between nearby particles
-      if (i > 0 && i % 4 == 0) {
-        final prevX = (random.nextDouble() * size.width) +
-            sin((animation * 2 * pi) + (i - 1)) * 20;
-        final prevY = (random.nextDouble() * size.height) +
-            cos((animation * 2 * pi) + (i - 1) * 0.5) * 15;
-
-        paint.strokeWidth = 0.5;
-        paint.color = const Color(0xFF10B981).withOpacity(0.1);
-        canvas.drawLine(Offset(x, y), Offset(prevX, prevY), paint);
-      }
+      paint.color = Colors.white.withOpacity(random.nextDouble() * 0.15);
+      canvas.drawCircle(Offset(x, dy), random.nextDouble() * 1.5, paint);
     }
   }
 
   @override
-  bool shouldRepaint(ParticlePainter oldDelegate) =>
+  bool shouldRepaint(TradeNetworkPainter oldDelegate) =>
       animation != oldDelegate.animation;
 }

@@ -31,24 +31,28 @@ class AppTheme {
   static TextTheme _buildTextTheme() {
     return TextTheme(
       displayLarge: GoogleFonts.outfit(
-        fontSize: 36,
+        fontSize: 32,
         fontWeight: FontWeight.bold,
         color: AppColors.textPrimary,
+        letterSpacing: -1.0,
       ),
       displayMedium: GoogleFonts.outfit(
         fontSize: 28,
         fontWeight: FontWeight.bold,
         color: AppColors.textPrimary,
+        letterSpacing: -0.5,
       ),
       headlineLarge: GoogleFonts.outfit(
         fontSize: 24,
         fontWeight: FontWeight.bold,
         color: AppColors.textPrimary,
+        letterSpacing: -0.5,
       ),
       headlineMedium: GoogleFonts.outfit(
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
+        letterSpacing: -0.2,
       ),
       titleLarge: GoogleFonts.outfit(
         fontSize: 18,
@@ -63,15 +67,18 @@ class AppTheme {
       bodyLarge: GoogleFonts.outfit(
         fontSize: 16,
         color: AppColors.textPrimary,
+        height: 1.5,
       ),
       bodyMedium: GoogleFonts.outfit(
         fontSize: 14,
         color: AppColors.textSecondary,
+        height: 1.5,
       ),
       labelLarge: GoogleFonts.outfit(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
+        letterSpacing: 0.5,
       ),
     );
   }
@@ -81,6 +88,7 @@ class AppTheme {
       backgroundColor: AppColors.background,
       elevation: 0,
       centerTitle: true,
+      scrolledUnderElevation: 0,
       titleTextStyle: GoogleFonts.outfit(
         fontSize: 18,
         fontWeight: FontWeight.w600,
@@ -95,8 +103,9 @@ class AppTheme {
       color: AppColors.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
       ),
+      margin: EdgeInsets.zero,
     );
   }
 
@@ -106,13 +115,13 @@ class AppTheme {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         textStyle: GoogleFonts.outfit(
           fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -122,7 +131,7 @@ class AppTheme {
     return InputDecorationTheme(
       filled: true,
       fillColor: AppColors.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
@@ -135,7 +144,12 @@ class AppTheme {
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: AppColors.primary, width: 2),
       ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: AppColors.error, width: 1),
+      ),
       hintStyle: GoogleFonts.outfit(color: AppColors.textMuted),
+      labelStyle: GoogleFonts.outfit(color: AppColors.textSecondary),
     );
   }
 

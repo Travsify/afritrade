@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -118,19 +119,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                         );
                       },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: Colors.white.withOpacity(0.15),
-                        ),
-                        child: Text(
-                          'Skip',
-                          style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              border: Border.all(color: Colors.white.withOpacity(0.2)),
+                            ),
+                            child: Text(
+                              'Skip',
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -262,26 +269,70 @@ class OnboardingData {
   });
 }
 
-class OnboardingPage extends StatelessWidget {
+// Cinematic Page with Ken Burns Effect
+class OnboardingPage extends StatefulWidget {
   final OnboardingData data;
 
   const OnboardingPage({super.key, required this.data});
 
   @override
+  State<OnboardingPage> createState() => _OnboardingPageState();
+}
+
+class _OnboardingPageState extends State<OnboardingPage> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+
+    _slideAnimation = Tween<Offset>(begin: Offset.zero, end: const Offset(0.05, 0)).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF4F46E5), // Indigo background base
+      color: const Color(0xFF4F46E5),
       child: Stack(
         children: [
-          // Background Image with Gradient Overlay
+          // Background Image with Ken Burns Effect
           Positioned.fill(
             bottom: MediaQuery.of(context).size.height * 0.4,
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: Image.asset(
-                    data.imagePath,
-                    fit: BoxFit.cover,
+                  child: AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _scaleAnimation.value,
+                        child: Transform.translate(
+                          offset: _slideAnimation.value * 50, // Slight horizontal pan
+                          child: Image.asset(
+                            widget.data.imagePath,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 Container(
@@ -290,7 +341,7 @@ class OnboardingPage extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        const Color(0xFF4F46E5).withOpacity(0.8),
+                        const Color(0xFF4F46E5).withOpacity(0.4),
                         const Color(0xFF4F46E5).withOpacity(0.95),
                       ],
                     ),
@@ -345,7 +396,7 @@ class OnboardingPage extends StatelessWidget {
                       ),
                       child: Center(
                         child: Text(
-                          data.icon,
+                          widget.data.icon,
                           style: const TextStyle(fontSize: 36),
                         ),
                       ),
@@ -358,7 +409,7 @@ class OnboardingPage extends StatelessWidget {
                   FadeInLeft(
                     delay: const Duration(milliseconds: 200),
                     child: Text(
-                      data.title,
+                      widget.data.title,
                       style: GoogleFonts.outfit(
                         color: Colors.white,
                         fontSize: 44,
@@ -378,13 +429,13 @@ class OnboardingPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: data.accentColor.withOpacity(0.2),
+                        color: widget.data.accentColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        data.subtitle,
+                        widget.data.subtitle,
                         style: GoogleFonts.outfit(
-                          color: data.accentColor,
+                          color: widget.data.accentColor,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 2,
@@ -395,13 +446,13 @@ class OnboardingPage extends StatelessWidget {
 
                   const Spacer(),
 
-                  // Description (inside the white area)
+                  // Description
                   FadeInUp(
                     delay: const Duration(milliseconds: 450),
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 150),
                       child: Text(
-                        data.description,
+                        widget.data.description,
                         style: GoogleFonts.inter(
                           color: const Color(0xFF1F2937),
                           fontSize: 18,
