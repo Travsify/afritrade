@@ -6,6 +6,8 @@ import 'package:afritrad_mobile/core/widgets/biometric_lock_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:afritrad_mobile/core/services/notification_service.dart';
+import 'package:afritrad_mobile/core/theme/app_theme.dart';
+import 'package:afritrad_mobile/features/home/presentation/pages/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,12 +79,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Afritrade',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F172A)),
-        useMaterial3: true,
-      ),
+      title: 'Afritrad Mobile', // Changed title
+      theme: AppTheme.lightTheme, // Changed theme
+      darkTheme: AppTheme.darkTheme, // Added darkTheme
+      themeMode: ThemeMode.system, // Added themeMode
       home: _isLocked
           ? BiometricLockScreen(onUnlocked: _unlock)
           : const SplashScreen(),

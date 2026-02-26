@@ -41,6 +41,14 @@ class VirtualAccountApiController extends Controller
         $label = $request->label ?? 'Afritrad Business';
         $user = Auth::user();
 
+        // ─── KYC CHECK ───
+        if ($user->verification_status !== 'verified') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Please complete your KYC verification before creating a virtual account.'
+            ], 403);
+        }
+
         // Use the FintechManager to get the active provider for accounts
         $service = $fintechManager->getAccountProvider();
         $providerName = ($service instanceof \App\Services\FincraService) ? 'fincra' : 'anchor';

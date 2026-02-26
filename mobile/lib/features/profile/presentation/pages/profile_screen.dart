@@ -13,6 +13,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/data/kyc_provider.dart';
 import '../../../auth/presentation/pages/kyb_registration_screen.dart';
+import '../../../settings/presentation/pages/security_settings_screen.dart';
 import 'transaction_pin_screen.dart';
 import '../../../support/presentation/pages/support_assistant_screen.dart';
 import '../../../settings/presentation/pages/about_afritrade_screen.dart';
@@ -624,12 +625,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         _buildActionItem(
           Icons.lock_outline, 
-          "Change Transaction PIN", 
-          kyc.hasTransactionPin ? "Secure your executions" : "Setup your security PIN", 
+          "Security & PIN Settings", 
+          kyc.hasTransactionPin ? "Manage your PIN and biometrics" : "Setup your security PIN", 
           () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => TransactionPinScreen(isChange: kyc.hasTransactionPin)),
+              MaterialPageRoute(builder: (context) => const SecuritySettingsScreen()),
             );
           },
         ),

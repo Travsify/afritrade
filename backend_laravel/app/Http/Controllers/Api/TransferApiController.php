@@ -64,7 +64,16 @@ class TransferApiController extends Controller
             // Debit Sender
             $wallet->decrement('balance', $request->amount);
             
-            // Credit Recipient
+            // Credit Recipient (Wallet to Wallet)
+            $recipientWallet = \App\Models\Wallet::firstOrCreate([
+                'user_id' => $recipient->id,
+                'currency' => $wallet->currency
+            ], ['balance' => 0]);
+            
+            $recipientWallet->increment('balance', $request->amount);
+            
+            // Sync flat balances for compatibility (optional)
+            $sender->decrement('balance', $request->amount);
             $recipient->increment('balance', $request->amount);
 
             // Log for Sender

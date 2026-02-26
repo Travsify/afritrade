@@ -39,32 +39,43 @@ class CryptoApiController extends Controller
 
         $user = Auth::user();
         $amount = $request->amount;
-        $rate = 0.90; // 1 USDT = 0.90 USD
         
+        // Fetch rate from DB or fallback
+        $rate = (float) \Illuminate\Support\Facades\DB::table('system_settings')
+            ->where('setting_key', 'usdt_usd_rate')
+            ->value('setting_value') ?? 0.95;
+
         $creditAmount = $amount * $rate;
-        $fee = $amount - $creditAmount;
 
-        // Auto-Convert Logic
-        $user->increment('balance', $creditAmount);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($user, $amount, $creditAmount, $rate) {
+            // 1. Credit USD Wallet
+            $usdWallet = $user->wallets()->firstOrCreate(
+                ['currency' => 'USD'],
+                ['balance' => 0]
+            );
+            $usdWallet->increment('balance', $creditAmount);
+            
+            // 2. Sync flat balance
+            $user->increment('balance', $creditAmount);
 
-        // Log User Credit
-        Transaction::create([
-            'user_id' => $user->id,
-            'type' => 'credit',
-            'amount' => $creditAmount,
-            'currency' => 'USD',
-            'recipient' => 'Wallet',
-            'status' => 'completed',
-            'reference' => 'CRYPTO-' . uniqid()
-        ]);
-        
-        // TODO: Log System Profit/Fee ($fee) to a system_revenue table or admin dashboard metric
+            // 3. Log Transaction
+            Transaction::create([
+                'user_id' => $user->id,
+                'wallet_id' => $usdWallet->id,
+                'type' => 'credit',
+                'amount' => $creditAmount,
+                'currency' => 'USD',
+                'recipient' => 'Crypto Deposit (USDT)',
+                'status' => 'completed',
+                'reference' => 'CRYPTO-' . strtoupper(uniqid()),
+                'narration' => "USDT Deposit of $amount converted at rate $rate"
+            ]);
+        });
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Deposit successful. Rate applied: ' . $rate,
-            'original_amount' => $amount,
-            'credited_amount' => $creditAmount,
+            'message' => 'Deposit processed successfully.',
+            'credited' => $creditAmount,
             'new_balance' => $user->fresh()->balance
         ]);
     }

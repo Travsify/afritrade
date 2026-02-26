@@ -97,5 +97,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
         Route::post('/cards/{id}/fund', [\App\Http\Controllers\Api\CardApiController::class, 'fund']);
         Route::post('/cards/{id}/toggle-freeze', [\App\Http\Controllers\Api\CardApiController::class, 'toggleFreeze']);
         Route::post('/invoices/{id}/pay', [\App\Http\Controllers\Api\InvoiceApiController::class, 'pay']);
+        Route::get('/rates', [\App\Http\Controllers\Api\RateApiController::class, 'index']);
+        Route::post('/wallets/swap', [\App\Http\Controllers\Api\WalletController::class, 'swap']);
     });
 });

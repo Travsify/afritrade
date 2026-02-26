@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/services/anchor_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../kyc/presentation/pages/kyc_verification_screen.dart' as kyc;
 
 class FundWalletScreen extends StatefulWidget {
   const FundWalletScreen({super.key});
@@ -112,7 +113,12 @@ class _FundWalletScreenState extends State<FundWalletScreen> with SingleTickerPr
                           ),
                         ),
                         TextButton(
-                          onPressed: () {}, // Navigate to KYC
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const kyc.KYCVerificationScreen()),
+                            );
+                          },
                           child: Text("Upgrade", style: GoogleFonts.outfit(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
                         ),
                       ],

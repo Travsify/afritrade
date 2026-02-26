@@ -75,4 +75,52 @@ class KycApiController extends Controller
 
         return response()->json(['message' => 'Verification failed', 'error' => $result['message'] ?? 'Unknown error'], 400);
     }
+
+    public function status(Request $request)
+    {
+        $user = Auth::user();
+        $documents = $user->kycDocuments()->get()->map(function ($doc) {
+            return [
+                'document_type' => $doc->doc_type,
+                'document_number' => $doc->document_number ?? 'N/A',
+                'status' => $doc->status,
+                'rejection_reason' => $doc->rejection_reason,
+            ];
+        });
+
+        // Define tier limits for display
+        $tierLimits = [
+            0 => ['daily' => 0, 'monthly' => 0, 'description' => 'Unverified - Please complete KYC'],
+            1 => ['daily' => 50000, 'monthly' => 500000, 'description' => 'Tier 1 - Basic Limits'],
+            2 => ['daily' => 500000, 'monthly' => 5000000, 'description' => 'Tier 2 - Enhanced Limits'],
+            3 => ['daily' => 10000000, 'monthly' => 100000000, 'description' => 'Tier 3 - Business/Unlimited'],
+        ];
+
+        $currentTier = $user->kyc_tier ?? 0;
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'kyc_tier' => $currentTier,
+                'verification_status' => $user->verification_status,
+                'tier_info' => $tierLimits[$currentTier] ?? $tierLimits[0],
+                'documents' => $documents,
+                'required_for_next_tier' => $this->getRequiredForNextTier($currentTier)
+            ]
+        ]);
+    }
+
+    private function getRequiredForNextTier($currentTier)
+    {
+        switch ($currentTier) {
+            case 0:
+                return ['bvn' => 'Verify BVN', 'nin' => 'Verify NIN'];
+            case 1:
+                return ['drivers_license' => 'Upload Driver License', 'passport' => 'Upload International Passport'];
+            case 2:
+                return ['utility_bill' => 'Upload Utility Bill (T3 Proof of Address)'];
+            default:
+                return [];
+        }
+    }
 }

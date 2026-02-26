@@ -85,8 +85,8 @@ class WalletController extends Controller
 
         $user = Auth::user();
         
-        // Verify PIN (Assuming basic check for now, should be more robust)
-        if ($user->transaction_pin !== $request->pin) {
+        // Verify PIN
+        if (!\Illuminate\Support\Facades\Hash::check($request->pin, $user->transaction_pin)) {
              return response()->json(['error' => 'Invalid transaction PIN'], 403);
         }
 
@@ -138,5 +138,79 @@ class WalletController extends Controller
         });
 
         return response()->json(['message' => 'Transfer successful']);
+    }
+    /**
+     * Swap currency between user's wallets.
+     */
+    public function swap(Request $request, \App\Services\ExchangeRateService $rateService)
+    {
+        $request->validate([
+            'from_currency' => 'required|string|size:3',
+            'to_currency' => 'required|string|size:3',
+            'amount' => 'required|numeric|min:0.01',
+            'pin' => 'required|string',
+        ]);
+
+        $user = Auth::user();
+
+        // 1. Verify PIN
+        if (!\Illuminate\Support\Facades\Hash::check($request->pin, $user->transaction_pin)) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid transaction PIN'], 403);
+        }
+
+        // 2. Get Wallets
+        $sourceWallet = Wallet::where('user_id', $user->id)->where('currency', $request->from_currency)->firstOrFail();
+        $destWallet = Wallet::where('user_id', $user->id)->where('currency', $request->to_currency)->first();
+
+        if (!$destWallet) {
+            return response()->json(['status' => 'error', 'message' => "Recipient wallet ({$request->to_currency}) not initialized"], 400);
+        }
+
+        if ($sourceWallet->balance < $request->amount) {
+            return response()->json(['status' => 'error', 'message' => 'Insufficient funds in source wallet'], 400);
+        }
+
+        // 3. Get Conversion Rate
+        $rate = $rateService->getFinalRate($request->from_currency, $request->to_currency);
+        if (!$rate) {
+            return response()->json(['status' => 'error', 'message' => 'Exchange rate currently unavailable'], 400);
+        }
+
+        $convertedAmount = $request->amount * $rate;
+
+        // 4. Atomic Swap
+        return DB::transaction(function () use ($sourceWallet, $destWallet, $request, $convertedAmount, $rate) {
+            // Debit
+            $sourceWallet->decrement('balance', $request->amount);
+            
+            // Credit
+            $destWallet->increment('balance', $convertedAmount);
+
+            // Log Transaction
+            Transaction::create([
+                'user_id' => $sourceWallet->user_id,
+                'wallet_id' => $sourceWallet->id,
+                'type' => 'debit',
+                'amount' => $request->amount,
+                'currency' => $request->from_currency,
+                'status' => 'completed',
+                'reference' => 'SWAP_OUT_' . strtoupper(uniqid()),
+                'narration' => "Swapped {$request->from_currency} for {$request->to_currency} at rate of {$rate}",
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Currency swapped successfully',
+                'data' => [
+                    'from_amount' => $request->amount,
+                    'to_amount' => $convertedAmount,
+                    'rate' => $rate,
+                    'new_balances' => [
+                        $request->from_currency => $sourceWallet->fresh()->balance,
+                        $request->to_currency => $destWallet->fresh()->balance,
+                    ]
+                ]
+            ]);
+        });
     }
 }

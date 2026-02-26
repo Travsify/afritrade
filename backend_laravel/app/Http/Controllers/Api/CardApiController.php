@@ -43,12 +43,22 @@ class CardApiController extends Controller
         ]);
 
         $user = Auth::user();
+
+        // ─── KYC CHECK ───
+        if ($user->verification_status !== 'verified') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Please complete your KYC verification before issuing a virtual card.'
+            ], 403);
+        }
+
         $service = $this->fintechManager->getCardProvider();
         $providerName = ($service instanceof \App\Services\MapleradService) ? 'maplerad' : 'anchor';
 
         // Check wallet balance (Afritrad logic)
-        if ($user->balance < $request->amount) {
-            return response()->json(['status' => 'error', 'message' => 'Insufficient funds'], 400);
+        $usdWallet = $user->wallets()->where('currency', 'USD')->first();
+        if (!$usdWallet || $usdWallet->balance < $request->amount) {
+            return response()->json(['status' => 'error', 'message' => 'Insufficient USD wallet balance'], 400);
         }
 
         $response = $service->createVirtualCard([
@@ -90,10 +100,43 @@ class CardApiController extends Controller
     public function fund(Request $request, $cardId)
     {
         $request->validate(['amount' => 'required|numeric|min:1']);
-        $card = \App\Models\VirtualCard::findOrFail($cardId);
+        $card = \App\Models\VirtualCard::where('id', $cardId)->where('user_id', Auth::id())->firstOrFail();
         
-        // Logic to fund via provider...
-        return response()->json(['status' => 'success', 'message' => 'Card funded']);
+        $user = Auth::user();
+        $usdWallet = $user->wallets()->where('currency', 'USD')->lockForUpdate()->first();
+        if (!$usdWallet || $usdWallet->balance < $request->amount) {
+            return response()->json(['status' => 'error', 'message' => 'Insufficient USD wallet balance'], 400);
+        }
+
+        $service = $this->fintechManager->getCardProvider();
+        
+        // Use the provider service to fund the card
+        $response = $service->fundCard($card->provider_id, $request->amount);
+
+        if ($response['status'] === 'success') {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($user, $usdWallet, $card, $request) {
+                $usdWallet->decrement('balance', $request->amount);
+                $card->increment('balance', $request->amount);
+                
+                // Sync flat balance if needed (optional depending on system design)
+                $user->decrement('balance', $request->amount);
+                    
+                \App\Models\Transaction::create([
+                    'user_id' => $user->id,
+                    'wallet_id' => $usdWallet->id,
+                    'type' => 'debit',
+                    'amount' => $request->amount,
+                    'currency' => 'USD',
+                    'status' => 'completed',
+                    'reference' => 'CARD_FUND_' . strtoupper(uniqid()),
+                    'narration' => "Funded virtual card ending in {$card->last4}",
+                ]);
+            });
+
+            return response()->json(['status' => 'success', 'message' => 'Card funded successfully']);
+        }
+
+        return response()->json(['status' => 'error', 'message' => $response['message'] ?? 'Funding failed'], 400);
     }
 
     /**
@@ -101,7 +144,7 @@ class CardApiController extends Controller
      */
     public function toggleFreeze($cardId)
     {
-        $card = \App\Models\VirtualCard::findOrFail($cardId);
+        $card = \App\Models\VirtualCard::where('id', $cardId)->where('user_id', Auth::id())->firstOrFail();
         $service = $this->fintechManager->getCardProvider();
         
         $newStatus = $card->status === 'active' ? 'freeze' : 'unfreeze';
@@ -109,8 +152,9 @@ class CardApiController extends Controller
 
         if ($response['status'] === 'success') {
             $card->update(['status' => ($newStatus === 'freeze' ? 'frozen' : 'active')]);
+            return response()->json(['status' => 'success', 'message' => 'Card status updated to ' . $card->status]);
         }
 
-        return response()->json(['status' => 'success', 'message' => 'Card status updated']);
+        return response()->json(['status' => 'error', 'message' => $response['message'] ?? 'Status update failed'], 400);
     }
 }

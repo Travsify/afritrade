@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         // Create the default admin user
         $this->call(AdminSeeder::class);
+        $this->call(SystemSettingsSeeder::class);
         $this->call(ServiceMarkupSeeder::class);
         $this->call(ExchangeRateMarkupSeeder::class);
     }

@@ -169,15 +169,49 @@ class AnchorService {
   // ============ WALLET ============
   // ============ WALLET ============
   Future<Map<String, dynamic>> getWalletBalance() async {
-    final response = await _apiClient.get('${AppApiConfig.baseUrl}/wallet_balance.php');
+    final response = await _apiClient.get(AppApiConfig.wallets);
     if (response.success && response.data != null) {
-      return response.data!;
+      final List<dynamic> wallets = response.data!['wallets'] ?? [];
+      double totalUsd = 0;
+      List<Map<String, dynamic>> assets = [];
+
+      for (var w in wallets) {
+        final balance = double.tryParse(w['balance'].toString()) ?? 0.0;
+        // In a real app, you'd fetch real-time conversion here
+        // For now, we'll assume 1:1 if USD, or use the balance as is for simplified display
+        totalUsd += (w['currency'] == 'USD') ? balance : 0.0; 
+        
+        assets.add({
+          'name': _getCurrencyName(w['currency']),
+          'currency': w['currency'],
+          'balance': balance,
+          'usd_value': balance, // Placeholder mapping
+        });
+      }
+
+      return {
+        'total_usd': totalUsd,
+        'assets': assets,
+      };
     }
     
     return {
       'total_usd': 0.00,
       'assets': [],
     };
+  }
+
+  String _getCurrencyName(String code) {
+    switch (code) {
+      case 'NGN': return 'Nigerian Naira';
+      case 'USD': return 'US Dollar';
+      case 'USDT': return 'Tether';
+      case 'USDC': return 'USD Coin';
+      case 'EUR': return 'Euro';
+      case 'GBP': return 'British Pound';
+      case 'CNY': return 'Chinese Yuan';
+      default: return code;
+    }
   }
 
   // ============ VIRTUAL ACCOUNTS (NUBAN) ============
@@ -322,10 +356,12 @@ class AnchorService {
     final response = await _apiClient.get(AppApiConfig.cards);
     
     if (response.success && response.data != null) {
-      final List<dynamic> rawData = response.data!['data'] ?? response.data!;
+      // Laravel standard response: { status: 'success', data: [...] }
+      final dynamic rawData = response.data!['data'] ?? response.data!;
       if (rawData is List) {
         _cards.clear();
         _cards.addAll(rawData.map((e) => Map<String, dynamic>.from(e)));
+        _cards.addAll(rawData.map((e) => Map<String, dynamic>.from(e))); // Ensure local sync
         cardsNotifier.value = List<Map<String, dynamic>>.from(_cards);
         await _saveToPersistence();
         return _cards;
@@ -335,7 +371,7 @@ class AnchorService {
   }
 
   Future<Map<String, dynamic>> issueCard({required String label, required double amount, required String brand}) async {
-    return _cardAction('issue', {
+    return _cardAction('', { // Base POST to /cards
       'label': label,
       'amount': amount,
       'brand': brand
@@ -343,39 +379,27 @@ class AnchorService {
   }
 
   Future<Map<String, dynamic>> fundCard({required String cardId, required double amount}) async {
-    return _cardAction('fund', {
-      'card_id': cardId,
-      'amount': amount
-    });
-  }
-
-  Future<Map<String, dynamic>> withdrawFromCard({required String cardId, required double amount}) async {
-    return _cardAction('withdraw', {
-      'card_id': cardId,
+    return _cardAction('/$cardId/fund', {
       'amount': amount
     });
   }
 
   Future<Map<String, dynamic>> freezeCard(String cardId) async {
-    return _cardAction('freeze', {'card_id': cardId});
+    return _cardAction('/$cardId/toggle-freeze', {});
   }
 
   Future<Map<String, dynamic>> unfreezeCard(String cardId) async {
-    return _cardAction('unfreeze', {'card_id': cardId});
+    return _cardAction('/$cardId/toggle-freeze', {});
   }
 
-  Future<Map<String, dynamic>> _cardAction(String action, Map<String, dynamic> extras) async {
+  Future<Map<String, dynamic>> _cardAction(String subPath, Map<String, dynamic> extras) async {
     final response = await _apiClient.post(
-      '${AppApiConfig.baseUrl}/cards.php',
-      body: {
-        'action': action,
-        ...extras
-      },
+      '${AppApiConfig.cards}$subPath',
+      body: extras,
     );
 
     if (response.success && response.data != null) {
-      // Refresh list to keep UI in sync
-      getVirtualCards();
+      getVirtualCards(); // Refresh
       return response.data!;
     }
     
