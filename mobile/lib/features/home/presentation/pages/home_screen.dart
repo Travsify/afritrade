@@ -6,8 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'dart:async';
 
 import 'package:afritrad_mobile/core/theme/app_colors.dart';
 import 'package:afritrad_mobile/core/theme/app_theme.dart';
@@ -49,8 +47,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int _currentIndex = 0;
   bool _balanceVisible = true;
   late AnimationController _glowController;
-  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
-  bool _isOffline = false;
   
   // Dashboard Account Selection
   final _anchorService = AnchorService();
@@ -67,15 +63,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     )..repeat(reverse: true);
     _fetchAccounts();
     _loadUserName();
-    _initConnectivity();
-  }
-
-  void _initConnectivity() {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
-      if (mounted) {
-        setState(() => _isOffline = results.contains(ConnectivityResult.none));
-      }
-    });
   }
 
   void _loadUserName() async {
@@ -107,7 +94,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _glowController.dispose();
-    _connectivitySubscription.cancel();
     super.dispose();
   }
 
@@ -123,12 +109,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            if (_isOffline) _buildOfflineIndicator(),
-            Expanded(child: _buildBody()),
-          ],
-        ),
+        child: _buildBody(),
       ),
       bottomNavigationBar: _buildFloatingBottomNav(),
       extendBody: true,
@@ -150,25 +131,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       default:
         return _buildDashboard();
     }
-  }
-
-  Widget _buildOfflineIndicator() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 8),
-      color: Colors.red.withOpacity(0.8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.wifi_off, color: Colors.white, size: 16),
-          SizedBox(width: 8),
-          Text(
-            "Working Offline",
-            style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildFloatingBottomNav() {

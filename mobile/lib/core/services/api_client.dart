@@ -128,7 +128,7 @@ class ApiClient {
 
     // Handle 401 — session expired, clear token
     if (response.statusCode == 401) {
-      await _handleSessionExpiry();
+      _handleSessionExpiry();
     }
 
     // Handle specific error codes

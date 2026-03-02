@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:afritrad_mobile/features/onboarding/presentation/pages/splash_screen.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +12,7 @@ import 'package:afritrad_mobile/core/widgets/connectivity_indicator.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:afritrad_mobile/core/services/notification_service.dart';
 import 'package:afritrad_mobile/core/theme/app_theme.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+// AppLockManager is available via biometric_lock_screen.dart
 
 
 void main() async {
