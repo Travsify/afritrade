@@ -12,7 +12,7 @@ import '../../core/constants/api_config.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint("Background Message: ${message.messageId}");
+  if (kDebugMode) debugPrint("Background Message: ${message.messageId}");
 }
 
 class NotificationService {
@@ -45,9 +45,9 @@ class NotificationService {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        debugPrint('User granted permission');
+        if (kDebugMode) debugPrint('User granted permission');
       } else {
-         debugPrint('User decliend permission');
+         if (kDebugMode) debugPrint('User decliend permission');
          return;
       }
 
@@ -67,7 +67,7 @@ class NotificationService {
 
       // 4. Foreground Message Handler
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('Got a message whilst in the foreground!');
+        if (kDebugMode) debugPrint('Got a message whilst in the foreground!');
         
         if (message.notification != null) {
            _showLocalNotification(message);
@@ -80,7 +80,7 @@ class NotificationService {
       // 6. Get Token & Save to Backend
       String? token = await _messaging.getToken();
       if (token != null) {
-        debugPrint("FCM Token: $token");
+        if (kDebugMode) debugPrint("FCM Token: $token");
         _saveTokenToBackend(token);
       }
       
@@ -89,7 +89,7 @@ class NotificationService {
 
       _isInitialized = true;
     } catch (e) {
-      debugPrint("Notification Init Error: $e");
+      if (kDebugMode) debugPrint("Notification Init Error: $e");
     }
   }
 
@@ -125,10 +125,10 @@ class NotificationService {
            headers: AppApiConfig.getHeaders(authToken),
            body: jsonEncode({'token': token})
         );
-        debugPrint("Token sent to backend");
+        if (kDebugMode) debugPrint("Token sent to backend");
       }
     } catch (e) {
-      debugPrint("Error saving token: $e");
+      if (kDebugMode) debugPrint("Error saving token: $e");
     }
   }
 }

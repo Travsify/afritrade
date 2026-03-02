@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
 
 import 'package:afritrad_mobile/core/theme/app_colors.dart';
 import 'package:afritrad_mobile/core/theme/app_theme.dart';
@@ -34,6 +36,7 @@ import 'package:provider/provider.dart';
 import 'package:afritrad_mobile/features/auth/data/kyc_provider.dart';
 import 'package:afritrad_mobile/features/auth/presentation/pages/kyc_required_screen.dart';
 import 'package:afritrad_mobile/core/widgets/money_text.dart';
+import 'package:marquee/marquee.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -46,6 +49,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int _currentIndex = 0;
   bool _balanceVisible = true;
   late AnimationController _glowController;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  bool _isOffline = false;
   
   // Dashboard Account Selection
   final _anchorService = AnchorService();
@@ -62,6 +67,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     )..repeat(reverse: true);
     _fetchAccounts();
     _loadUserName();
+    _initConnectivity();
+  }
+
+  void _initConnectivity() {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      if (mounted) {
+        setState(() => _isOffline = results.contains(ConnectivityResult.none));
+      }
+    });
   }
 
   void _loadUserName() async {
@@ -93,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _glowController.dispose();
+    _connectivitySubscription.cancel();
     super.dispose();
   }
 
@@ -108,7 +123,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: _buildBody(),
+        child: Column(
+          children: [
+            if (_isOffline) _buildOfflineIndicator(),
+            Expanded(child: _buildBody()),
+          ],
+        ),
       ),
       bottomNavigationBar: _buildFloatingBottomNav(),
       extendBody: true,
@@ -130,6 +150,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       default:
         return _buildDashboard();
     }
+  }
+
+  Widget _buildOfflineIndicator() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 8),
+      color: Colors.red.withOpacity(0.8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.wifi_off, color: Colors.white, size: 16),
+          SizedBox(width: 8),
+          Text(
+            "Working Offline",
+            style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFloatingBottomNav() {
@@ -218,7 +257,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return RefreshIndicator(
       onRefresh: () async {
         _fetchAccounts();
-        await Future.delayed(Duration(seconds: 1));
+        await _anchorService.getVirtualCards();
+        await _anchorService.getTransactions();
+        await _anchorService.getMarketRates();
+        if (mounted) setState(() {});
       },
       child: SingleChildScrollView(
         physics: AlwaysScrollableScrollPhysics(),
@@ -412,14 +454,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           child: PageView.builder(
             itemCount: banners.length,
             itemBuilder: (context, index) {
+              final imageUrl = banners[index]['image_url'];
+              
               return Container(
                 margin: EdgeInsets.symmetric(horizontal: 5),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  image: DecorationImage(
-                    image: NetworkImage(banners[index]['image_url']),
-                    fit: BoxFit.cover,
-                  ),
+                  image: imageUrl != null && imageUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                  color: AppColors.surface,
                   boxShadow: [
                     BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5))
                   ]
@@ -433,6 +480,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       colors: [Colors.black.withOpacity(0.6), Colors.transparent],
                     ),
                   ),
+                  child: imageUrl == null || imageUrl.isEmpty 
+                    ? Center(child: Icon(Icons.image_not_supported, color: AppColors.textMuted))
+                    : null,
                 ),
               );
             },
@@ -539,48 +589,48 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        MoneyText(
-                          amount: _selectedAccount!['balance'] ?? 0.0,
-                          currency: _selectedAccount!['currency'] ?? 'USD',
-                          size: 36,
-                          fontWeight: FontWeight.bold,
-                          visibility: _balanceVisible ? MoneyVisibility.visible : MoneyVisibility.hidden,
-                        ),
-                        SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () => setState(() => _balanceVisible = !_balanceVisible),
-                          child: Icon(
-                            _balanceVisible ? Iconsax.eye : Iconsax.eye_slash,
-                            color: AppColors.textMuted,
-                            size: 20,
-                          ),
-                        ),
-                      ],
+                    MoneyText(
+                      amount: (_selectedAccount!['balance'] ?? 0.0).toDouble(),
+                      currency: _selectedAccount!['currency']?.toString() ?? 'USD',
+                      size: 36,
+                      fontWeight: FontWeight.bold,
+                      visibility: _balanceVisible ? MoneyVisibility.visible : MoneyVisibility.hidden,
                     ),
-                    SizedBox(height: 8),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6, height: 6,
-                            decoration: BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            _selectedAccount!['currency'] ?? 'USD',
-                            style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                          ),
-                          Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary, size: 14),
-                        ],
+                    SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => setState(() => _balanceVisible = !_balanceVisible),
+                      child: Icon(
+                        _balanceVisible ? Iconsax.eye : Iconsax.eye_slash,
+                        color: AppColors.textMuted,
+                        size: 20,
                       ),
                     ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6, height: 6,
+                        decoration: BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        _selectedAccount!['currency']?.toString() ?? 'USD',
+                        style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                      Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary, size: 14),
+                    ],
+                  ),
+                ),
                   ],
                 ),
               ),
@@ -977,15 +1027,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               
               return Column(
                 children: snapshot.data!.map((tx) {
+                   if (tx == null) return const SizedBox.shrink();
+                   final type = tx['type']?.toString() ?? 'debit';
+                   final currency = tx['currency']?.toString() ?? 'USD';
+                   final amount = tx['amount']?.toString() ?? '0.00';
+                   final title = tx['title']?.toString() ?? 'Transaction';
+                   final date = tx['date']?.toString() ?? 'Today';
+
                    return Column(
                      children: [
                        _buildTransactionItem(
-                          icon: _getIconForType(tx['type']),
-                          iconColor: _getColorForType(tx['type']),
-                          title: tx['title'],
-                          subtitle: tx['date'],
-                          amount: "${tx['type'] == 'debit' ? '-' : '+'}${tx['currency']} ${tx['amount']}",
-                          amountColor: _getColorForType(tx['type']),
+                          icon: _getIconForType(type),
+                          iconColor: _getColorForType(type),
+                          title: title,
+                          subtitle: date,
+                          amount: "${type == 'debit' ? '-' : '+'}$currency $amount",
+                          amountColor: _getColorForType(type),
                        ),
                        if (tx != snapshot.data!.last) Divider(color: AppColors.glassBorder),
                      ],
@@ -1022,43 +1079,111 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text("Pay Bill", style: GoogleFonts.outfit(color: Colors.white)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text("Select Bill Category", style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: Icon(Icons.phone_android, color: Colors.blue),
-              title: Text("Airtime & Data", style: GoogleFonts.outfit(color: Colors.white)),
-              onTap: () { Navigator.pop(context); _processBill("Airtime"); },
-            ),
-            ListTile(
-              leading: Icon(Icons.lightbulb, color: Colors.amber),
-              title: Text("Electricity", style: GoogleFonts.outfit(color: Colors.white)),
-              onTap: () { Navigator.pop(context); _processBill("Electricity"); },
-            ),
-             ListTile(
-              leading: Icon(Icons.tv, color: Colors.red),
-              title: Text("Cable TV", style: GoogleFonts.outfit(color: Colors.white)),
-              onTap: () { Navigator.pop(context); _processBill("Cable TV"); },
-            ),
+            _buildBillTile(Icons.phone_android, "Airtime & Data", Colors.blue),
+            _buildBillTile(Icons.lightbulb, "Electricity", Colors.amber),
+            _buildBillTile(Icons.tv, "Cable TV", Colors.red),
           ],
         ),
       ),
     );
   }
 
-  void _processBill(String type) async {
+  Widget _buildBillTile(IconData icon, String label, Color color) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      title: Text(label, style: GoogleFonts.outfit(color: Colors.white, fontSize: 16)),
+      trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textMuted, size: 14),
+      onTap: () {
+        Navigator.pop(context);
+        _showAmountDialog(label);
+      },
+    );
+  }
+
+  void _showAmountDialog(String type) {
+    final TextEditingController amountController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text("Pay $type", style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Enter the amount you wish to pay", style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              style: GoogleFonts.outfit(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "0.00",
+                hintStyle: GoogleFonts.outfit(color: AppColors.textMuted),
+                prefixText: "₦ ",
+                prefixStyle: GoogleFonts.outfit(color: AppColors.primary, fontWeight: FontWeight.bold),
+                filled: true,
+                fillColor: Colors.black.withOpacity(0.2),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel", style: GoogleFonts.outfit(color: AppColors.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final amountStr = amountController.text.trim();
+              final amount = double.tryParse(amountStr) ?? 0.0;
+              if (amount > 0) {
+                Navigator.pop(context);
+                _processBill(type, amount);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter a valid amount")));
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text("Pay Now", style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _processBill(String type, double amount) async {
     // Show loading
-    showDialog(context: context, barrierDismissible: false, builder: (c) => Center(child: CircularProgressIndicator(color: AppColors.primary)));
+    showDialog(context: context, barrierDismissible: false, builder: (c) => const Center(child: CircularProgressIndicator(color: AppColors.primary)));
     
-    await _anchorService.payBill(type: type, amount: 5000, reference: "REF123"); 
+    await _anchorService.payBill(
+      type: type, 
+      amount: amount, 
+      reference: "REF_${DateTime.now().millisecondsSinceEpoch}"
+    ); 
     
-    Navigator.pop(context); // Close loading
-    
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      backgroundColor: AppColors.success,
-      content: Text("$type Payment Successful!", style: GoogleFonts.outfit(color: Colors.white)),
-    ));
+    if (mounted) {
+      Navigator.pop(context); // Close loading
+      
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: AppColors.success,
+        content: Text("$type Payment of ₦${amount.toStringAsFixed(2)} Successful!", style: GoogleFonts.outfit(color: Colors.white)),
+      ));
+    }
   }
 
   Widget _buildTransactionItem({
@@ -1132,14 +1257,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             builder: (context, snapshot) {
                if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: AppColors.primary));
                
-               final ratesMap = snapshot.data!;
+               final ratesMap = snapshot.data ?? {};
                final rateList = ratesMap.entries.map((e) {
-                 final parts = e.key.split('_');
+                 final key = e.key.toString();
+                 final value = e.value;
+                 final parts = key.split('_');
                  return {
-                   'from': parts.length > 0 ? parts[0] : '?',
+                   'from': parts.isNotEmpty ? parts[0] : '?',
                    'to': parts.length > 1 ? parts[1] : '?',
-                   'rate': e.value,
-                   'change': 0.0, // Default change if not provided
+                   'rate': (value is num) ? value.toStringAsFixed(2) : value.toString(),
+                   'change': 0.0,
                  };
                }).toList();
 
@@ -1149,11 +1276,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 children: rateList.map((rate) {
                    return _buildRateCard(
-                     rate['from'] as String, 
-                     rate['to'] as String, 
-                     rate['rate'].toString(), 
-                     (rate['change'] as double) >= 0, 
-                     (rate['change'] as double) >= 0 ? AppColors.success : AppColors.error
+                     (rate['from'] ?? '?').toString(), 
+                     (rate['to'] ?? '?').toString(), 
+                     (rate['rate'] ?? '0.00').toString(), 
+                     ((rate['change'] as double?) ?? 0.0) >= 0, 
+                     ((rate['change'] as double?) ?? 0.0) >= 0 ? AppColors.success : AppColors.error
                    );
                 }).toList(),
               );
@@ -1247,31 +1374,50 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildNewsTicker() {
-    return Container(
-      height: 40,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Marquee(
-          text: " USD/NGN ₦1,600.00 (-1.2%) • GBP/NGN ₦2,025.30 (+0.2%) • EUR/NGN ₦1,739.13 (-0.5%) • CNY/NGN ₦222.22 (+0.4%) • Global Logistics: All systems operational. ",
-          style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12),
-          scrollAxis: Axis.horizontal,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          blankSpace: 20.0,
-          velocity: 30.0,
-          pauseAfterRound: Duration(seconds: 1),
-          startPadding: 10.0,
-          accelerationDuration: Duration(seconds: 1),
-          accelerationCurve: Curves.linear,
-          decelerationDuration: Duration(milliseconds: 500),
-          decelerationCurve: Curves.easeOut,
-        ),
-      ),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _anchorService.getMarketRates(),
+      builder: (context, snapshot) {
+        String tickerText = " Global Logistics: All systems operational. ";
+        if (snapshot.hasData) {
+          final rates = snapshot.data ?? {};
+          final List<String> segments = [];
+          rates.forEach((key, value) {
+            final pair = key.toString().replaceAll('_', '/');
+            final formattedRate = (value is num) ? value.toDouble().toStringAsFixed(2) : value.toString();
+            segments.add("$pair ₦$formattedRate");
+          });
+          if (segments.isNotEmpty) {
+            tickerText = "${segments.join(" • ")} • $tickerText";
+          }
+        }
+
+        return Container(
+          height: 40,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Marquee(
+              text: tickerText,
+              style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12),
+              scrollAxis: Axis.horizontal,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              blankSpace: 20.0,
+              velocity: 30.0,
+              pauseAfterRound: const Duration(seconds: 1),
+              startPadding: 10.0,
+              accelerationDuration: const Duration(seconds: 1),
+              accelerationCurve: Curves.linear,
+              decelerationDuration: const Duration(milliseconds: 500),
+              decelerationCurve: Curves.easeOut,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1344,22 +1490,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     color: AppColors.primary,
                     title: 'Welcome to Afritrad!',
                     message: 'Start trading with secure cross-border payments.',
-                    time: '2 hours ago',
+                    time: 'Just now',
                   ),
-                  _buildNotificationItem(
-                    icon: Icons.info_outline,
-                    color: AppColors.featureAlerts,
-                    title: 'Rate Alert',
-                    message: 'USD/NGN reached your target rate of ₦1,550',
-                    time: '5 hours ago',
-                  ),
-                  _buildNotificationItem(
-                    icon: Icons.check_circle_outline,
-                    color: AppColors.success,
-                    title: 'Transaction Completed',
-                    message: 'Payment of \$500.00 was successful',
-                    time: 'Yesterday',
-                  ),
+
                 ],
               ),
             ),

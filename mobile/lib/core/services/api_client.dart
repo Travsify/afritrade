@@ -95,7 +95,7 @@ class ApiClient {
       attempt++;
       if (attempt < _maxRetries) {
         final delay = _baseDelay * (1 << attempt); // Exponential backoff
-        debugPrint('API retry $attempt after ${delay.inMilliseconds}ms');
+        if (kDebugMode) debugPrint('API retry $attempt after ${delay.inMilliseconds}ms');
         await Future.delayed(delay);
       }
     }
@@ -126,6 +126,11 @@ class ApiClient {
       );
     }
 
+    // Handle 401 — session expired, clear token
+    if (response.statusCode == 401) {
+      await _handleSessionExpiry();
+    }
+
     // Handle specific error codes
     String message;
     switch (response.statusCode) {
@@ -154,6 +159,19 @@ class ApiClient {
       message: message,
       data: data,
     );
+  }
+
+  /// Handle expired session — clear stored credentials.
+  Future<void> _handleSessionExpiry() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('auth_token');
+      await prefs.setBool('is_logged_in', false);
+      await prefs.setBool('session_expired', true);
+      if (kDebugMode) debugPrint('Session expired — token cleared, user will be redirected to login.');
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error clearing session: $e');
+    }
   }
 
   /// Convert exception to user-friendly message.

@@ -28,6 +28,8 @@ class User extends Authenticatable
         'fcm_token',
         'country',
         'business_name',
+        'phone',
+        'firebase_uid',
         'otp_code',
         'otp_expires_at',
         'is_otp_verified',

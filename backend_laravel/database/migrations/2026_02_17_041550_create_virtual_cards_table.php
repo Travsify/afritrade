@@ -14,15 +14,19 @@ return new class extends Migration
         Schema::create('virtual_cards', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('card_number')->unique();
-            $table->string('name_on_card');
-            $table->string('expiration_date'); // MM/YY
-            $table->string('cvv');
+            $table->string('label')->nullable();
+            $table->string('card_number')->unique()->nullable(); // Nullable if card is being provisioned
+            $table->string('last4', 4)->nullable();
+            $table->string('name_on_card')->nullable();
+            $table->string('expiration_date')->nullable(); // MM/YY
+            $table->string('cvv')->nullable();
             $table->string('card_type')->default('virtual'); // virtual, physical
             $table->string('brand')->default('Visa'); // Visa, Mastercard
             $table->string('currency')->default('USD');
             $table->decimal('balance', 15, 2)->default(0.00);
             $table->string('status')->default('active'); // active, frozen, terminated
+            $table->string('provider')->nullable();
+            $table->string('provider_id')->unique()->nullable();
             $table->string('billing_address')->nullable();
             $table->timestamps();
         });

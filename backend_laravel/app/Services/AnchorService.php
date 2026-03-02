@@ -199,4 +199,122 @@ class AnchorService
             return ['status' => 'error', 'message' => 'Connection failed'];
         }
     }
+
+    /**
+     * Issue a virtual card via Anchor.
+     */
+    public function createVirtualCard(array $data)
+    {
+        $payload = [
+            'amount' => $data['amount'] * 100,
+            'currency' => 'USD',
+            'customer_id' => $data['customer_id'] ?? null,
+            'reference' => 'CARD_' . uniqid(),
+            // Add other required fields based on Anchor docs
+        ];
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ])->post("{$this->baseUrl}/cards", $payload);
+
+            if ($response->successful()) {
+                return [
+                    'status' => 'success',
+                    'data' => $response->json()['data']
+                ];
+            }
+
+            Log::error('Anchor Card Error: ' . $response->body());
+            return ['status' => 'error', 'message' => $response->json()['message'] ?? 'Failed to create card'];
+
+        } catch (\Exception $e) {
+            Log::error('Anchor Card Exception: ' . $e->getMessage());
+            return ['status' => 'error', 'message' => 'Connection failed'];
+        }
+    }
+
+    /**
+     * Fund a virtual card via Anchor.
+     */
+    public function fundCard($cardId, $amount)
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ])->post("{$this->baseUrl}/cards/{$cardId}/fund", [
+                'amount' => $amount * 100,
+            ]);
+
+            if ($response->successful()) {
+                return ['status' => 'success', 'data' => $response->json()];
+            }
+
+            return ['status' => 'error', 'message' => $response->json()['message'] ?? 'Funding failed'];
+        } catch (\Exception $e) {
+            return ['status' => 'error', 'message' => 'Connection failed'];
+        }
+    }
+
+    /**
+     * Toggle card status (freeze/unfreeze) via Anchor.
+     */
+    public function toggleCardStatus($cardId, $status = 'freeze')
+    {
+        return $status === 'freeze' ? $this->freezeCard($cardId) : $this->unfreezeCard($cardId);
+    }
+
+    /**
+     * Freeze a virtual card via Anchor API.
+     */
+    public function freezeCard($cardId)
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->put("{$this->baseUrl}/cards/{$cardId}/freeze");
+
+            if ($response->successful()) {
+                return ['status' => 'success', 'data' => $response->json()];
+            }
+
+            Log::error('Anchor Card Freeze Error: ' . $response->body());
+            return ['status' => 'error', 'message' => $response->json()['message'] ?? 'Failed to freeze card'];
+
+        } catch (\Exception $e) {
+            Log::error('Anchor Card Freeze Exception: ' . $e->getMessage());
+            return ['status' => 'error', 'message' => 'Connection failed'];
+        }
+    }
+
+    /**
+     * Unfreeze a virtual card via Anchor API.
+     */
+    public function unfreezeCard($cardId)
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->put("{$this->baseUrl}/cards/{$cardId}/unfreeze");
+
+            if ($response->successful()) {
+                return ['status' => 'success', 'data' => $response->json()];
+            }
+
+            Log::error('Anchor Card Unfreeze Error: ' . $response->body());
+            return ['status' => 'error', 'message' => $response->json()['message'] ?? 'Failed to unfreeze card'];
+
+        } catch (\Exception $e) {
+            Log::error('Anchor Card Unfreeze Exception: ' . $e->getMessage());
+            return ['status' => 'error', 'message' => 'Connection failed'];
+        }
+    }
 }

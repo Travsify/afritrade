@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:afritrad_mobile/core/theme/app_colors.dart';
@@ -31,8 +32,10 @@ class OTPVerificationScreen extends StatefulWidget {
 }
 
 class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
-  final List<TextEditingController> _controllers = List.generate(4, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
+  final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  String? _verificationId;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _isLoading = false;
   int _counter = 60;
   Timer? _timer;
@@ -41,10 +44,53 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   void initState() {
     super.initState();
     _startTimer();
-    // Simulate sending OTP on initialization
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showSimulatedOTP();
-    });
+    _verifyPhoneNumber();
+  }
+
+  Future<void> _verifyPhoneNumber() async {
+    setState(() => _isLoading = true);
+    await _auth.verifyPhoneNumber(
+      phoneNumber: widget.phone,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        // Auto-resolution on Android
+        if (credential.smsCode != null) {
+          for (int i = 0; i < 6 && i < credential.smsCode!.length; i++) {
+            _controllers[i].text = credential.smsCode![i];
+          }
+        }
+        try {
+          final userCredential = await _auth.signInWithCredential(credential);
+          await _finalizeVerification(userCredential.user?.uid);
+        } catch (e) {
+          debugPrint("Auto-verification failed: $e");
+          if (mounted) setState(() => _isLoading = false);
+        }
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        _showError(e.message ?? "Verification failed");
+        setState(() => _isLoading = false);
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        setState(() {
+          _verificationId = verificationId;
+          _isLoading = false;
+        });
+        _showCodeSentSnackbar();
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        _verificationId = verificationId;
+      },
+    );
+  }
+
+  void _showCodeSentSnackbar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Verification code sent to ${widget.phone}"),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _showSimulatedOTP() {
@@ -103,16 +149,34 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
   Future<void> _verifyOTP() async {
     String otp = _controllers.map((e) => e.text).join();
-    if (otp.length < 4) return;
+    if (otp.length < 6 || _verificationId == null) return;
 
     setState(() => _isLoading = true);
 
+    try {
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: otp,
+      );
+
+      final userCredential = await _auth.signInWithCredential(credential);
+      await _finalizeVerification(userCredential.user?.uid);
+    } catch (e) {
+      _showError("Invalid code. Please try again.");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _finalizeVerification(String? firebaseUid) async {
+    if (firebaseUid == null) return;
+    
     try {
       final response = await http.post(
         Uri.parse(AppApiConfig.baseUrl + "/verify-otp"),
         body: jsonEncode({
           'email': widget.email,
-          'otp': otp,
+          'firebase_uid': firebaseUid,
         }),
         headers: AppApiConfig.getHeaders(null),
       );
@@ -132,21 +196,21 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
          await prefs.setBool('is_logged_in', true);
 
          if (mounted) {
-            context.read<KYCProvider>().setLoggedIn(true);
+            await context.read<KYCProvider>().setLoggedIn(true);
             
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AuthWrapper()),
-              (route) => false,
-            );
+            if (mounted) {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const AuthWrapper()),
+                (route) => false,
+              );
+            }
          }
       } else {
         _showError(data['message'] ?? "Verification failed");
       }
     } catch (e) {
-      _showError("Connection error. Please try again.");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      _showError("Connection error syncing with server.");
     }
   }
 
@@ -180,7 +244,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         children: [
           _buildBackgroundDecoration(),
           SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +262,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                             border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                           ),
                           child: Text(
-                            "STEP 2/4",
+                            "STEP 4/4",
                             style: GoogleFonts.outfit(
                               color: AppColors.primary,
                               fontSize: 12,
@@ -208,7 +272,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          "Verify your Email",
+                          "Verify Phone Number",
                           style: GoogleFonts.outfit(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -218,7 +282,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "We've sent a 4-digit code to\n${widget.email}",
+                          "We've sent a 6-digit code to\n${widget.phone}",
                           style: GoogleFonts.outfit(
                             fontSize: 16,
                             color: AppColors.textSecondary,
@@ -234,7 +298,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                     delay: const Duration(milliseconds: 200),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(4, (index) => _buildOTPField(index)),
+                      children: List.generate(6, (index) => _buildOTPField(index)),
                     ),
                   ),
                   
@@ -287,7 +351,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                               GestureDetector(
                                 onTap: _counter == 0 ? () {
                                   _startTimer();
-                                  _showSimulatedOTP();
+                                  _verifyPhoneNumber();
                                 } : null,
                                 child: Text(
                                   _counter > 0 
@@ -316,8 +380,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
   Widget _buildOTPField(int index) {
     return Container(
-      width: 70,
-      height: 80,
+      width: 50,
+      height: 70,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -345,7 +409,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           ),
           onChanged: (value) {
             if (value.isNotEmpty) {
-              if (index < 3) {
+              if (index < 5) {
                 _focusNodes[index + 1].requestFocus();
               } else {
                 _focusNodes[index].unfocus();

@@ -57,6 +57,29 @@ class MapleradService
     }
 
     /**
+     * Fund a card.
+     */
+    public function fundCard($cardId, $amount)
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->secretKey,
+                'Content-Type' => 'application/json',
+            ])->post("{$this->baseUrl}/issuing/cards/{$cardId}/fund", [
+                'amount' => $amount * 100,
+            ]);
+
+            if ($response->successful()) {
+                return ['status' => 'success', 'data' => $response->json()];
+            }
+
+            return ['status' => 'error', 'message' => $response->json()['message'] ?? 'Funding failed'];
+        } catch (\Exception $e) {
+            return ['status' => 'error', 'message' => 'Connection failed'];
+        }
+    }
+
+    /**
      * Freeze/Unfreeze a card.
      */
     public function toggleCardStatus($cardId, $status = 'freeze')
@@ -66,7 +89,11 @@ class MapleradService
             $response = Http::withHeaders(['Authorization' => 'Bearer ' . $this->secretKey])
                 ->post("{$this->baseUrl}/issuing/cards/{$cardId}/{$endpoint}");
             
-            return $response->json();
+            if ($response->successful()) {
+                return ['status' => 'success', 'data' => $response->json()];
+            }
+
+            return ['status' => 'error', 'message' => $response->json()['message'] ?? 'Status update failed'];
         } catch (\Exception $e) {
             return ['status' => 'error', 'message' => $e->getMessage()];
         }

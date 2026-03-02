@@ -35,17 +35,39 @@ class VirtualCardController extends Controller
         return view('admin.virtual-cards.show', compact('virtualCard'));
     }
 
-    public function freeze(VirtualCard $virtualCard)
+    public function freeze(VirtualCard $virtualCard, \App\Services\AnchorService $anchorService)
     {
-        $virtualCard->update(['status' => 'frozen']);
-        // TODO: Call API to freeze card on provider side
-        return back()->with('success', 'Card frozen successfully.');
+        if (!$virtualCard->provider_card_id) {
+            // Fallback for demo cards or cards created before migration
+            $virtualCard->update(['status' => 'frozen']);
+            return back()->with('warning', 'Card frozen locally, but no provider ID found.');
+        }
+
+        $response = $anchorService->freezeCard($virtualCard->provider_card_id);
+
+        if ($response['status'] === 'success') {
+            $virtualCard->update(['status' => 'frozen']);
+            return back()->with('success', 'Card frozen successfully on provider side.');
+        }
+
+        return back()->with('error', 'Failed to freeze card on provider: ' . ($response['message'] ?? 'Unknown error'));
     }
 
-    public function unfreeze(VirtualCard $virtualCard)
+    public function unfreeze(VirtualCard $virtualCard, \App\Services\AnchorService $anchorService)
     {
-        $virtualCard->update(['status' => 'active']);
-        // TODO: Call API to unfreeze card on provider side
-        return back()->with('success', 'Card unfrozen successfully.');
+        if (!$virtualCard->provider_card_id) {
+            // Fallback for demo cards
+            $virtualCard->update(['status' => 'active']);
+            return back()->with('warning', 'Card activated locally, but no provider ID found.');
+        }
+
+        $response = $anchorService->unfreezeCard($virtualCard->provider_card_id);
+
+        if ($response['status'] === 'success') {
+            $virtualCard->update(['status' => 'active']);
+            return back()->with('success', 'Card unfrozen successfully on provider side.');
+        }
+
+        return back()->with('error', 'Failed to unfreeze card on provider: ' . ($response['message'] ?? 'Unknown error'));
     }
 }

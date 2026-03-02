@@ -7,6 +7,11 @@ import 'app_colors.dart';
 class AppTheme {
   AppTheme._();
 
+  /// Light theme (uses same dark aesthetic for consistent fintech branding)
+  static ThemeData get lightTheme {
+    return darkTheme; // Afritrad uses a unified dark fintech theme
+  }
+
   /// Main dark theme for the app
   static ThemeData get darkTheme {
     return ThemeData(

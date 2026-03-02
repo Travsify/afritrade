@@ -107,9 +107,6 @@ class AnchorService {
       if (cardsStr != null) {
         final List<dynamic> decoded = jsonDecode(cardsStr);
         _cards.clear();
-        _cards.addAll(decoded.map((e) => Map<String, dynamic>.from(e)));
-        _cards.addAll(decoded.map((e) => Map<String, dynamic>.from(e)));
-        cardsNotifier.value = List<Map<String, dynamic>>.from(_cards);
       }
 
       final benefStr = prefs.getString(_beneficiariesKey);
@@ -162,7 +159,7 @@ class AnchorService {
         _taxReports.addAll(decoded.map((e) => Map<String, dynamic>.from(e)));
       }
     } catch (e) {
-      debugPrint('Error loading persistence: $e');
+      if (kDebugMode) debugPrint('Error loading persistence: $e');
     }
   }
 
@@ -361,7 +358,6 @@ class AnchorService {
       if (rawData is List) {
         _cards.clear();
         _cards.addAll(rawData.map((e) => Map<String, dynamic>.from(e)));
-        _cards.addAll(rawData.map((e) => Map<String, dynamic>.from(e))); // Ensure local sync
         cardsNotifier.value = List<Map<String, dynamic>>.from(_cards);
         await _saveToPersistence();
         return _cards;

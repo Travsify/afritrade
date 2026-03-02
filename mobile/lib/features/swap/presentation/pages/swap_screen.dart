@@ -54,6 +54,7 @@ class _SwapScreenState extends State<SwapScreen> with SingleTickerProviderStateM
     
     _updateRate();
     _fetchLimits();
+    _fetchBalances();
     _amountController.addListener(_updateFee);
   }
 
@@ -303,7 +304,39 @@ class _SwapScreenState extends State<SwapScreen> with SingleTickerProviderStateM
     );
   }
 
+  List<Map<String, dynamic>> _balances = [];
+
+  Future<void> _fetchBalances() async {
+    try {
+      final data = await _anchorService.getWalletBalance();
+      if (mounted) {
+        setState(() {
+          _balances = List<Map<String, dynamic>>.from(data['assets'] ?? []);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching balances: $e');
+    }
+  }
+
+  String _getCurrencyBalance(String currency) {
+    if (_balances.isEmpty) return "0.00";
+    try {
+      final asset = _balances.firstWhere(
+        (a) => a['currency'] == currency,
+        orElse: () => {'balance': 0.0},
+      );
+      final balance = (asset['balance'] as num?)?.toDouble() ?? 0.0;
+      return balance.toStringAsFixed(2);
+    } catch (e) {
+      return "0.00";
+    }
+  }
+
   Widget _buildCurrencyInput(String label, String currency, bool isInput, {required bool isTop}) {
+    final symbol = currency == 'NGN' ? '₦' : '\$';
+    final balance = _getCurrencyBalance(currency);
+    
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -311,7 +344,7 @@ class _SwapScreenState extends State<SwapScreen> with SingleTickerProviderStateM
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.glassBorder),
         boxShadow: isTop ? [] : [
-           BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
+           const BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
         ]
       ),
       child: Column(
@@ -321,7 +354,7 @@ class _SwapScreenState extends State<SwapScreen> with SingleTickerProviderStateM
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(label, style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14)),
-              Text("Balance: \$0.00", style: GoogleFonts.outfit(color: AppColors.textMuted, fontSize: 12)),
+              Text("Balance: ${symbol}${balance}", style: GoogleFonts.outfit(color: AppColors.textMuted, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 16),

@@ -13,6 +13,7 @@ import '../../../../core/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'registration_screen.dart';
 import 'forgot_password_screen.dart';
+import 'otp_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -63,6 +64,19 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const AuthWrapper()),
+            );
+         }
+      } else if (response.statusCode == 403 && data['requires_otp'] == true) {
+         if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OTPVerificationScreen(
+                  email: data['email'],
+                  phone: data['phone'] ?? "",
+                  password: _passwordController.text.trim(),
+                ),
+              ),
             );
          }
       } else {

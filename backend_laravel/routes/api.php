@@ -13,6 +13,7 @@ Route::middleware('throttle:10,1')->group(function () {
 Route::get('/banners', [\App\Http\Controllers\Api\GeneralApiController::class, 'banners']);
 Route::get('/settings', [\App\Http\Controllers\Api\SettingsApiController::class, 'index']);
 Route::get('/banks', [\App\Http\Controllers\Api\FlutterwaveController::class, 'getBanks']);
+Route::get('/rates', [\App\Http\Controllers\Api\RateApiController::class, 'index']);
 
 // ─── Fintech Webhooks (no auth, verified by signature) ───
 Route::post('/webhooks/{provider}', [\App\Http\Controllers\Api\WebhookController::class, 'handle']);
@@ -84,7 +85,29 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
 
     // Flutterwave Payments
     Route::post('/payments/initialize', [\App\Http\Controllers\Api\FlutterwaveController::class, 'initializePayment']);
+    // Flutterwave Payments
     Route::get('/payments/verify/{reference}', [\App\Http\Controllers\Api\FlutterwaveController::class, 'verifyPayment']);
+
+    // Market Rates (Moved to public)
+
+    // Referrals
+    Route::get('/referrals', [\App\Http\Controllers\Api\ReferralApiController::class, 'index']);
+
+    // Beneficiaries
+    Route::get('/beneficiaries', [\App\Http\Controllers\Api\BeneficiaryApiController::class, 'index']);
+    Route::post('/beneficiaries', [\App\Http\Controllers\Api\BeneficiaryApiController::class, 'store']);
+    Route::delete('/beneficiaries/{id}', [\App\Http\Controllers\Api\BeneficiaryApiController::class, 'destroy']);
+
+    // Trade Insights
+    Route::get('/trade-insights', [\App\Http\Controllers\Api\TradeInsightsApiController::class, 'index']);
+
+    // Bulk Payments
+    Route::get('/bulk-payments', [\App\Http\Controllers\Api\BulkPaymentApiController::class, 'index']);
+    Route::post('/bulk-payments', [\App\Http\Controllers\Api\BulkPaymentApiController::class, 'store']);
+
+    // Tax Reports
+    Route::get('/tax_reports', [\App\Http\Controllers\Api\TaxReportApiController::class, 'index']);
+    Route::post('/tax_reports/generate', [\App\Http\Controllers\Api\TaxReportApiController::class, 'generate']);
 
     // ─── PIN-Protected Financial Routes ───
     Route::middleware('verify.pin')->group(function () {
@@ -97,7 +120,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
         Route::post('/cards/{id}/fund', [\App\Http\Controllers\Api\CardApiController::class, 'fund']);
         Route::post('/cards/{id}/toggle-freeze', [\App\Http\Controllers\Api\CardApiController::class, 'toggleFreeze']);
         Route::post('/invoices/{id}/pay', [\App\Http\Controllers\Api\InvoiceApiController::class, 'pay']);
-        Route::get('/rates', [\App\Http\Controllers\Api\RateApiController::class, 'index']);
         Route::post('/wallets/swap', [\App\Http\Controllers\Api\WalletController::class, 'swap']);
+        Route::post('/bills/pay', [\App\Http\Controllers\Api\BillApiController::class, 'pay']);
+        Route::post('/bulk-payments/process', [\App\Http\Controllers\Api\BulkPaymentApiController::class, 'process']);
     });
 });

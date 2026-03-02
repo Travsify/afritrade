@@ -76,15 +76,16 @@ class CardApiController extends Controller
         $card = \App\Models\VirtualCard::create([
             'user_id' => $user->id,
             'label' => $request->label,
-            'card_number' => $data['card_number'] ?? '**** **** **** ' . ($data['last4'] ?? '0000'),
-            'last4' => $data['last4'] ?? '0000',
-            'expiry' => $data['expiry'] ?? null,
+            'card_number' => $data['card_number'] ?? null,
+            'last4' => $data['last4'] ?? substr($data['card_number'] ?? '', -4),
+            'expiration_date' => $data['expiry'] ?? $data['expiration_date'] ?? null,
+            'cvv' => $data['cvv'] ?? null,
             'brand' => ucfirst($request->brand),
             'currency' => 'USD',
             'balance' => $request->amount,
             'status' => 'active',
             'provider' => $providerName,
-            'provider_id' => $data['id'] ?? null,
+            'provider_id' => $data['id'] ?? $data['card_id'] ?? null,
         ]);
 
         return response()->json([
@@ -129,7 +130,7 @@ class CardApiController extends Controller
                     'currency' => 'USD',
                     'status' => 'completed',
                     'reference' => 'CARD_FUND_' . strtoupper(uniqid()),
-                    'narration' => "Funded virtual card ending in {$card->last4}",
+                    'narration' => "Funded virtual card ending in " . ($card->last4 ?? '****'),
                 ]);
             });
 

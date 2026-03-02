@@ -23,6 +23,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _businessController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   String _selectedCountry = "Nigeria";
@@ -61,6 +62,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   Future<void> _register() async {
+    if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
+      _showError("Valid Email Address is required");
+      return;
+    }
+    if (_phoneController.text.length < 10) {
+      _showError("Valid Phone Number is required");
+      return;
+    }
     if (_passwordController.text != _confirmPasswordController.text) {
       _showError("Passwords do not match");
       return;
@@ -74,6 +83,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         body: jsonEncode({
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
+          'phone': _phoneController.text.trim(),
           'password': _passwordController.text.trim(),
           'country': _selectedCountry,
           'business_name': _businessController.text.trim(),
@@ -92,7 +102,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               context,
               MaterialPageRoute(builder: (context) => OTPVerificationScreen(
                 email: _emailController.text.trim(),
-                phone: "", // Keep for API compatibility in OTP screen if needed, but email is target
+                phone: _phoneController.text.trim(),
                 password: _passwordController.text.trim(),
               )),
             );
@@ -157,7 +167,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                 border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                               ),
                               child: Text(
-                                "STEP $_currentStep/3",
+                                "STEP $_currentStep/4",
                                 style: GoogleFonts.outfit(
                                   color: AppColors.primary,
                                   fontSize: 12,
@@ -217,6 +227,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             label: "Email Address",
                             hint: "name@example.com",
                             icon: Icons.alternate_email_rounded,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildInputField(
+                            controller: _phoneController,
+                            label: "Phone Number",
+                            hint: "+234 812 345 6789",
+                            icon: Icons.phone_android_rounded,
+                            keyboardType: TextInputType.phone,
                           ),
                           const SizedBox(height: 20),
                           _buildInputField(

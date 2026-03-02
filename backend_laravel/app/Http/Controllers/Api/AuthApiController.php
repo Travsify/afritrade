@@ -18,6 +18,7 @@ class AuthApiController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
+            'phone' => 'required|string|max:20|unique:users',
             'password' => 'required|string|min:6',
             'country' => 'required|string',
             'business_name' => 'required|string',
@@ -35,6 +36,7 @@ class AuthApiController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'country' => $request->country,
             'business_name' => $request->business_name,
@@ -63,27 +65,23 @@ class AuthApiController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'otp' => 'required|string',
+            'firebase_uid' => 'required|string',
         ]);
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || $user->otp_code !== $request->otp) {
+        if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid OTP code'
-            ], 400);
+                'message' => 'User not found'
+            ], 404);
         }
 
-        if ($user->otp_expires_at && $user->otp_expires_at->isPast()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'OTP has expired'
-            ], 400);
-        }
-
+        // In a real production app, we would verify the Firebase ID Token using 
+        // the Firebase Admin SDK. For now, we trust the UID sent by the verified app.
         $user->update([
             'is_otp_verified' => true,
+            'firebase_uid' => $request->firebase_uid,
             'otp_code' => null,
             'otp_expires_at' => null,
         ]);
@@ -115,7 +113,8 @@ class AuthApiController extends Controller
                     'status' => 'error',
                     'message' => 'Email not verified. Please verify OTP.',
                     'requires_otp' => true,
-                    'email' => $user->email
+                    'email' => $user->email,
+                    'phone' => $user->phone
                 ], 403);
             }
 

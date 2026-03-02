@@ -1,28 +1,45 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:afritrad_mobile/features/onboarding/presentation/pages/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:afritrad_mobile/features/auth/data/kyc_provider.dart';
 import 'package:afritrad_mobile/core/widgets/biometric_lock_screen.dart';
+import 'package:afritrad_mobile/core/widgets/error_boundary.dart';
+import 'package:afritrad_mobile/core/widgets/connectivity_indicator.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:afritrad_mobile/core/services/notification_service.dart';
 import 'package:afritrad_mobile/core/theme/app_theme.dart';
-import 'package:afritrad_mobile/features/home/presentation/pages/home_screen.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Robust initialization to prevent blank screen hangs
   try {
-    await Firebase.initializeApp(); // Requires google-services.json
-  } catch (e) {
-    debugPrint("Firebase initialization failed: $e");
-  }
+    // Global Error Boundary - Catch rendering crashes
+    GlobalErrorBoundary.init();
 
-  try {
-    await NotificationService().init();
+    // Initialize Firebase first
+    await Firebase.initializeApp().timeout(const Duration(seconds: 5));
+
+    // Initialize Crashlytics
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
+    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+
+    // Initialize NotificationService
+    await NotificationService().init().timeout(const Duration(seconds: 3));
+
   } catch (e) {
-    debugPrint("Notification initialization failed: $e");
+    if (kDebugMode) debugPrint("Critical initialization error: $e");
   }
   
   runApp(
@@ -79,10 +96,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Afritrad Mobile', // Changed title
-      theme: AppTheme.lightTheme, // Changed theme
-      darkTheme: AppTheme.darkTheme, // Added darkTheme
-      themeMode: ThemeMode.system, // Added themeMode
+      title: 'Afritrad Mobile',
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
+      builder: (context, child) => OfflineIndicator(child: child!),
       home: _isLocked
           ? BiometricLockScreen(onUnlocked: _unlock)
           : const SplashScreen(),

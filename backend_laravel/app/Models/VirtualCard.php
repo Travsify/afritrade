@@ -8,7 +8,10 @@ class VirtualCard extends Model
 {
     protected $fillable = [
         'user_id',
+        'label',
+        'provider_id',
         'card_number',
+        'last4',
         'name_on_card',
         'expiration_date',
         'cvv',
@@ -17,6 +20,7 @@ class VirtualCard extends Model
         'currency',
         'balance',
         'status',
+        'provider',
         'billing_address'
     ];
 

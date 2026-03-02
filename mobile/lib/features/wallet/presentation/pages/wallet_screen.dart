@@ -4,6 +4,7 @@ import 'package:animate_do/animate_do.dart';
 import '../../../../core/services/anchor_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'fund_wallet_screen.dart';
+import '../../../payments/presentation/pages/pay_supplier_screen.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -262,7 +263,10 @@ class _WalletScreenState extends State<WalletScreen> {
             MaterialPageRoute(builder: (context) => const FundWalletScreen()),
           );
         } else if (label == "Pay") {
-          // TODO: Navigate to Pay Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const PaySupplierScreen()),
+          );
         }
       },
       child: Container(
