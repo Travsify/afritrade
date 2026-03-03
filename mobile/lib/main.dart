@@ -40,7 +40,7 @@ void main() async {
     await NotificationService().init().timeout(const Duration(seconds: 3));
 
   } catch (e) {
-    if (kDebugMode) debugPrint("Critical initialization error: $e");
+    // Critical initialization error
   }
   
   runApp(

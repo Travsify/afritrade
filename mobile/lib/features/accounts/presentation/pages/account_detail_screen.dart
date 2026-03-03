@@ -15,7 +15,7 @@ class AccountDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currency = account['currency'] ?? 'USD';
-    final balance = (account['balance'] ?? 0.0).toStringAsFixed(2);
+    final balance = (double.tryParse(account['balance'].toString()) ?? 0.0).toStringAsFixed(2);
     final bankName = account['bank_name'] ?? 'Virtual Bank';
     final accountName = account['account_name'] ?? 'User Account';
     

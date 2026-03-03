@@ -552,7 +552,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                     MoneyText(
-                      amount: (_selectedAccount!['balance'] ?? 0.0).toDouble(),
+                      amount: double.tryParse((_selectedAccount!['balance'] ?? 0.0).toString()) ?? 0.0,
                       currency: _selectedAccount!['currency']?.toString() ?? 'USD',
                       size: 36,
                       fontWeight: FontWeight.bold,

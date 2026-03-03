@@ -303,7 +303,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
               ),
             ),
             Text(
-              "${account['currency']} ${(account['balance'] ?? 0).toStringAsFixed(2)}",
+              "${account['currency']} ${(double.tryParse(account['balance'].toString()) ?? 0.0).toStringAsFixed(2)}",
               style: GoogleFonts.outfit(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],

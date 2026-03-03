@@ -95,7 +95,6 @@ class ApiClient {
       attempt++;
       if (attempt < _maxRetries) {
         final delay = _baseDelay * (1 << attempt); // Exponential backoff
-        if (kDebugMode) debugPrint('API retry $attempt after ${delay.inMilliseconds}ms');
         await Future.delayed(delay);
       }
     }
@@ -168,9 +167,8 @@ class ApiClient {
       await prefs.remove('auth_token');
       await prefs.setBool('is_logged_in', false);
       await prefs.setBool('session_expired', true);
-      if (kDebugMode) debugPrint('Session expired — token cleared, user will be redirected to login.');
     } catch (e) {
-      if (kDebugMode) debugPrint('Error clearing session: $e');
+      // Silently fail or use Crashlytics in production
     }
   }
 

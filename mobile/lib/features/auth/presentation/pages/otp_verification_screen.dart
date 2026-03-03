@@ -62,7 +62,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           final userCredential = await _auth.signInWithCredential(credential);
           await _finalizeVerification(userCredential.user?.uid);
         } catch (e) {
-          debugPrint("Auto-verification failed: $e");
           if (mounted) setState(() => _isLoading = false);
         }
       },
@@ -89,39 +88,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         content: Text("Verification code sent to ${widget.phone}"),
         backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _showSimulatedOTP() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.mark_email_read_rounded, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Verification Code Sent",
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "DEBUG: Use code '1234' to proceed",
-                    style: GoogleFonts.outfit(fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 5),
       ),
     );
   }

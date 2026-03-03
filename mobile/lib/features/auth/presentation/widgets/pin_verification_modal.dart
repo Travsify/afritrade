@@ -55,7 +55,7 @@ class _PinVerificationModalState extends State<PinVerificationModal> {
         }
       }
     } catch (e) {
-      debugPrint("Biometric Error: $e");
+      // Biometric Error
     }
   }
 

@@ -35,7 +35,7 @@ class _OfflineIndicatorState extends State<OfflineIndicator> {
     try {
       result = await _connectivity.checkConnectivity();
     } catch (e) {
-      debugPrint('Couldn\'t check connectivity status: $e');
+      // Connectivity check error
       return;
     }
     if (!mounted) return;

@@ -159,7 +159,7 @@ class AnchorService {
         _taxReports.addAll(decoded.map((e) => Map<String, dynamic>.from(e)));
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('Error loading persistence: $e');
+      // Persistence load error
     }
   }
 
@@ -317,7 +317,16 @@ class AnchorService {
       final dynamic rawData = response.data!['data'] ?? response.data!;
       if (rawData is List) {
         _accounts.clear();
-        _accounts.addAll(rawData.map((e) => Map<String, dynamic>.from(e)));
+        for (var e in rawData) {
+          final map = Map<String, dynamic>.from(e);
+          // Safely parse balance
+          if (map['balance'] != null) {
+            map['balance'] = double.tryParse(map['balance'].toString()) ?? 0.0;
+          } else {
+            map['balance'] = 0.0;
+          }
+          _accounts.add(map);
+        }
         accountsNotifier.value = List<Map<String, dynamic>>.from(_accounts);
         await _saveToPersistence();
         return _accounts;
@@ -357,7 +366,13 @@ class AnchorService {
       final dynamic rawData = response.data!['data'] ?? response.data!;
       if (rawData is List) {
         _cards.clear();
-        _cards.addAll(rawData.map((e) => Map<String, dynamic>.from(e)));
+        for (var e in rawData) {
+          final map = Map<String, dynamic>.from(e);
+          if (map['balance'] != null) {
+            map['balance'] = double.tryParse(map['balance'].toString()) ?? 0.0;
+          }
+          _cards.add(map);
+        }
         cardsNotifier.value = List<Map<String, dynamic>>.from(_cards);
         await _saveToPersistence();
         return _cards;
@@ -529,7 +544,6 @@ class AnchorService {
       }
       return {'status': 'error', 'message': 'Upload failed with status ${response.statusCode}'};
     } catch (e) {
-      debugPrint('KYC Upload Error: $e');
       return {'status': 'error', 'message': e.toString()};
     }
   }
