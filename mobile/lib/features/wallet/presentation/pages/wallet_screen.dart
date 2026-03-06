@@ -130,7 +130,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              "\$${(_walletData?['total_usd'] ?? 0.0).toStringAsFixed(2)}",
+                              "\$${(double.tryParse((_walletData?['total_usd'] ?? 0.0).toString()) ?? 0.0).toStringAsFixed(2)}",
                               style: GoogleFonts.outfit(
                                 color: Colors.white,
                                 fontSize: 36,
@@ -171,8 +171,8 @@ class _WalletScreenState extends State<WalletScreen> {
                       return _buildAssetItem(
                         asset['name'] ?? 'Unknown',
                         asset['currency'] ?? '',
-                        (asset['balance'] ?? 0.0).toStringAsFixed(2),
-                        "\$${(asset['usd_value'] ?? 0.0).toStringAsFixed(2)}",
+                        (double.tryParse((asset['balance'] ?? 0.0).toString()) ?? 0.0).toStringAsFixed(2),
+                        "\$${(double.tryParse((asset['usd_value'] ?? 0.0).toString()) ?? 0.0).toStringAsFixed(2)}",
                         _getAssetColor(asset['currency']),
                       );
                     }).toList(),

@@ -1,0 +1,309 @@
+﻿flutter : Your project is 
+configured to compile 
+against Android SDK 35, 
+but the following 
+plugin(s) require to be 
+compiled against a higher 
+Android SDK version:
+At line:1 char:1
++ flutter build apk 
+--release 1>$null 
+2>build_error.txt
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo        
+      : NotSpecified: (Y  
+  our project is...id S   
+ DK version::String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+- flutter_plugin_android_l
+ifecycle compiles against 
+Android SDK 36
+- image_picker_android 
+compiles against Android 
+SDK 36
+- local_auth_android 
+compiles against Android 
+SDK 36
+- path_provider_android 
+compiles against Android 
+SDK 36
+- shared_preferences_andro
+id compiles against 
+Android SDK 36
+- sqflite_android 
+compiles against Android 
+SDK 36
+- url_launcher_android 
+compiles against Android 
+SDK 36
+Fix this issue by 
+compiling against the 
+highest Android SDK 
+version (they are 
+backward compatible).
+Add the following to C:\Us
+ers\USER\Desktop\Afritrad\
+mobile\android\app\build.g
+radle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+FAILURE: Build failed 
+with an exception.
+
+* What went wrong:
+Execution failed for task 
+':app:checkReleaseAarMetad
+ata'.
+> A failure occurred 
+while executing com.androi
+d.build.gradle.internal.ta
+sks.CheckAarMetadataWorkAc
+tion
+   > 6 issues were found 
+when checking AAR 
+metadata:
+
+       1.  Dependency 'and
+roidx.browser:browser:1.9.
+0' requires libraries and 
+applications that
+           depend on it 
+to compile against 
+version 36 or later of the
+           Android APIs.
+
+           :app is 
+currently compiled 
+against android-35.
+
+           Recommended 
+action: Update this 
+project to use a newer 
+compileSdk
+           of at least 
+36, for example 36.
+
+           Note that 
+updating a library or 
+application's compileSdk 
+(which
+           allows newer 
+APIs to be used) can be 
+done separately from 
+updating
+           targetSdk 
+(which opts the app in to 
+new runtime behavior) and
+           minSdk (which 
+determines which devices 
+the app can be installed
+           on).
+
+       2.  Dependency 'and
+roidx.activity:activity-kt
+x:1.12.4' requires 
+libraries and 
+applications that
+           depend on it 
+to compile against 
+version 36 or later of the
+           Android APIs.
+
+           :app is 
+currently compiled 
+against android-35.
+
+           Recommended 
+action: Update this 
+project to use a newer 
+compileSdk
+           of at least 
+36, for example 36.
+
+           Note that 
+updating a library or 
+application's compileSdk 
+(which
+           allows newer 
+APIs to be used) can be 
+done separately from 
+updating
+           targetSdk 
+(which opts the app in to 
+new runtime behavior) and
+           minSdk (which 
+determines which devices 
+the app can be installed
+           on).
+
+       3.  Dependency 'and
+roidx.navigationevent:navi
+gationevent-android:1.0.2'
+ requires libraries and 
+applications that
+           depend on it 
+to compile against 
+version 36 or later of the
+           Android APIs.
+
+           :app is 
+currently compiled 
+against android-35.
+
+           Recommended 
+action: Update this 
+project to use a newer 
+compileSdk
+           of at least 
+36, for example 36.
+
+           Note that 
+updating a library or 
+application's compileSdk 
+(which
+           allows newer 
+APIs to be used) can be 
+done separately from 
+updating
+           targetSdk 
+(which opts the app in to 
+new runtime behavior) and
+           minSdk (which 
+determines which devices 
+the app can be installed
+           on).
+
+       4.  Dependency 'and
+roidx.activity:activity:1.
+12.4' requires libraries 
+and applications that
+           depend on it 
+to compile against 
+version 36 or later of the
+           Android APIs.
+
+           :app is 
+currently compiled 
+against android-35.
+
+           Recommended 
+action: Update this 
+project to use a newer 
+compileSdk
+           of at least 
+36, for example 36.
+
+           Note that 
+updating a library or 
+application's compileSdk 
+(which
+           allows newer 
+APIs to be used) can be 
+done separately from 
+updating
+           targetSdk 
+(which opts the app in to 
+new runtime behavior) and
+           minSdk (which 
+determines which devices 
+the app can be installed
+           on).
+
+       5.  Dependency 'and
+roidx.core:core-ktx:1.17.0
+' requires libraries and 
+applications that
+           depend on it 
+to compile against 
+version 36 or later of the
+           Android APIs.
+
+           :app is 
+currently compiled 
+against android-35.
+
+           Recommended 
+action: Update this 
+project to use a newer 
+compileSdk
+           of at least 
+36, for example 36.
+
+           Note that 
+updating a library or 
+application's compileSdk 
+(which
+           allows newer 
+APIs to be used) can be 
+done separately from 
+updating
+           targetSdk 
+(which opts the app in to 
+new runtime behavior) and
+           minSdk (which 
+determines which devices 
+the app can be installed
+           on).
+
+       6.  Dependency 'and
+roidx.core:core:1.17.0' 
+requires libraries and 
+applications that
+           depend on it 
+to compile against 
+version 36 or later of the
+           Android APIs.
+
+           :app is 
+currently compiled 
+against android-35.
+
+           Recommended 
+action: Update this 
+project to use a newer 
+compileSdk
+           of at least 
+36, for example 36.
+
+           Note that 
+updating a library or 
+application's compileSdk 
+(which
+           allows newer 
+APIs to be used) can be 
+done separately from 
+updating
+           targetSdk 
+(which opts the app in to 
+new runtime behavior) and
+           minSdk (which 
+determines which devices 
+the app can be installed
+           on).
+
+* Try:
+> Run with --stacktrace 
+option to get the stack 
+trace.
+> Run with --info or 
+--debug option to get 
+more log output.
+> Run with --scan to get 
+full insights.
+> Get more help at 
+https://help.gradle.org.
+
+BUILD FAILED in 8s
+Gradle task 
+assembleRelease failed 
+with exit code 1

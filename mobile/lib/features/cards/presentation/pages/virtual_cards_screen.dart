@@ -209,7 +209,7 @@ class _VirtualCardsScreenState extends State<VirtualCardsScreen> {
             _detailRow("Card Number", "**** **** **** ${card['last4']}", canCopy: true),
             _detailRow("CVV", card['cvv']?.toString() ?? '***', canCopy: true),
             _detailRow("Expiry", card['expiry'] ?? '12/28'),
-            _detailRow("Balance", "\$${(card['balance'] ?? 0.0).toStringAsFixed(2)}"),
+            _detailRow("Balance", "\$${(double.tryParse((card['balance'] ?? 0.0).toString()) ?? 0.0).toStringAsFixed(2)}"),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -427,7 +427,7 @@ class _HolographicCardState extends State<HolographicCard> with SingleTickerProv
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text("Balance", style: GoogleFonts.outfit(color: Colors.white54, fontSize: 11)),
-                                Text("\$${(widget.card['balance'] ?? 0.0).toStringAsFixed(2)}", style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                                Text("\$${(double.tryParse((widget.card['balance'] ?? 0.0).toString()) ?? 0.0).toStringAsFixed(2)}", style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                               ],
                             ),
                             Column(

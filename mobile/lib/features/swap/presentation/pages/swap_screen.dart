@@ -467,7 +467,7 @@ class _SwapScreenState extends State<SwapScreen> with SingleTickerProviderStateM
             Text("Swap Successful!", style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
-              "Converted ${result['from_amount']} ${result['from_currency']} to ${result['to_amount']?.toStringAsFixed(2) ?? '0.00'} ${result['to_currency']}",
+              "Converted ${result['from_amount']} ${result['from_currency']} to ${(double.tryParse(result['to_amount'].toString()) ?? 0.0).toStringAsFixed(2)} ${result['to_currency']}",
               textAlign: TextAlign.center, 
               style: GoogleFonts.outfit(color: AppColors.textSecondary),
             ),

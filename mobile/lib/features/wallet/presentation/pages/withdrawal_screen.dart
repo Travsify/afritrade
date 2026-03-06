@@ -235,11 +235,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
             if (_exchangeRate > 0) ...[
               const SizedBox(height: 8),
               Text(
-                "You will receive: ₦${_receiveAmount.toStringAsFixed(2)}",
+                "You will receive: ₦${(double.tryParse(_receiveAmount.toString()) ?? 0.0).toStringAsFixed(2)}",
                 style: GoogleFonts.outfit(color: AppColors.success, fontWeight: FontWeight.bold),
               ),
               Text(
-                "Rate: 1 ${_selectedAccount?['currency']} = ₦${_exchangeRate.toStringAsFixed(2)}",
+                "Rate: 1 ${_selectedAccount?['currency']} = ₦${(double.tryParse(_exchangeRate.toString()) ?? 0.0).toStringAsFixed(2)}",
                 style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12),
               ),
             ],

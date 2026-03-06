@@ -471,7 +471,7 @@ class _VirtualAccountsScreenState extends State<VirtualAccountsScreen> {
                   style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
                 ),
                 Text(
-                  "${account['currency']} ${(account['balance'] ?? 0.0).toStringAsFixed(2)}",
+                  "${account['currency']} ${(double.tryParse((account['balance'] ?? 0.0).toString()) ?? 0.0).toStringAsFixed(2)}",
                   style: GoogleFonts.outfit(color: AppColors.success, fontWeight: FontWeight.bold),
                 ),
               ],
