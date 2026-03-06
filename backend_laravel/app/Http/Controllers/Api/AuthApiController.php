@@ -40,23 +40,23 @@ class AuthApiController extends Controller
             'password' => Hash::make($request->password),
             'country' => $request->country,
             'business_name' => $request->business_name,
-            'otp_code' => $otp,
-            'otp_expires_at' => now()->addMinutes(15),
-            'is_otp_verified' => false,
+            'otp_code' => null,
+            'otp_expires_at' => null,
+            'is_otp_verified' => true,
             'kyb_status' => 'none',
         ]);
 
-        // Send OTP via email in production
-        Log::info("OTP for {$user->email}: {$otp}");
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Account created. Please verify OTP.',
+            'message' => 'Account created successfully.',
+            'token' => $token,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'otp_debug' => $otp // Remove in production
+                'is_verified' => false
             ]
         ]);
     }
@@ -108,16 +108,6 @@ class AuthApiController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             
-            if (!$user->is_otp_verified) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Email not verified. Please verify OTP.',
-                    'requires_otp' => true,
-                    'email' => $user->email,
-                    'phone' => $user->phone
-                ], 403);
-            }
-
             $token = $user->createToken('auth_token')->plainTextToken;
 
             // Send login security alert
