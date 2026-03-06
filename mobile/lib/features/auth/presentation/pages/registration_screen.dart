@@ -9,7 +9,6 @@ import 'package:afritrad_mobile/features/auth/presentation/pages/auth_wrapper.da
 
 import '../../../../core/constants/api_config.dart';
 import '../../../../core/theme/app_colors.dart';
-import 'otp_verification_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -61,6 +60,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
+  String _formatPhone(String phone) {
+    String p = phone.trim().replaceAll(RegExp(r'\s+'), '');
+    if (p.startsWith('0')) {
+      p = '+234${p.substring(1)}';
+    } else if (!p.startsWith('+')) {
+      p = '+$p';
+    }
+    return p;
+  }
+
   Future<void> _register() async {
     if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
       _showError("Valid Email Address is required");
@@ -78,12 +87,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     setState(() => _isLoading = true);
     
     try {
+      final formattedPhone = _formatPhone(_phoneController.text);
+      
       final response = await http.post(
         Uri.parse(AppApiConfig.register),
         body: jsonEncode({
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim(),
+          'phone': formattedPhone,
           'password': _passwordController.text.trim(),
           'country': _selectedCountry,
           'business_name': _businessController.text.trim(),
@@ -96,15 +107,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       if (response.statusCode == 200 && data['status'] == 'success') {
          if (mounted) {
             final user = data['user'];
-            final otp = data['user']['otp_debug']; // Keep for easy testing as per plan
+            final prefs = await SharedPreferences.getInstance();
+            
+            // Save User ID & Token
+            await prefs.setString('user_id', user['id'].toString());
+            await prefs.setString('user_name', user['name'] ?? "");
+            await prefs.setString('user_email', user['email']);
+            
+            // Save Sanctum Token if provided
+            if (data['token'] != null) {
+              await prefs.setString('auth_token', data['token']);
+            }
+            
+            await prefs.setBool('is_logged_in', true);
+            
+            // Notify provider (using AuthWrapper logic)
+            // Note: AuthWrapper will pick up the logged in state on rebuild
             
              Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => OTPVerificationScreen(
-                email: _emailController.text.trim(),
-                phone: _phoneController.text.trim(),
-                password: _passwordController.text.trim(),
-              )),
+              MaterialPageRoute(builder: (context) => const AuthWrapper()),
             );
          }
       } else {

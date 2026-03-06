@@ -23,24 +23,38 @@ void main() async {
     // Global Error Boundary - Catch rendering crashes
     GlobalErrorBoundary.init();
 
-    // Initialize Firebase first
-    await Firebase.initializeApp().timeout(const Duration(seconds: 5));
+    // Initialize Firebase with a longer timeout
+    try {
+      await Firebase.initializeApp().timeout(const Duration(seconds: 15));
+      debugPrint("Firebase initialized successfully");
+    } catch (e) {
+      debugPrint("Firebase initialization failed/timed out: $e");
+    }
 
-    // Initialize Crashlytics
-    FlutterError.onError = (errorDetails) {
-      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-    };
-    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-    PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      return true;
-    };
+    // Initialize Crashlytics only if Firebase is ready
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        FlutterError.onError = (errorDetails) {
+          FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+        };
+        PlatformDispatcher.instance.onError = (error, stack) {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          return true;
+        };
+      }
+    } catch (e) {
+      debugPrint("Crashlytics initialization failed: $e");
+    }
 
     // Initialize NotificationService
-    await NotificationService().init().timeout(const Duration(seconds: 3));
+    try {
+      await NotificationService().init().timeout(const Duration(seconds: 5));
+    } catch (e) {
+      debugPrint("Notification service initialization failed: $e");
+    }
 
   } catch (e) {
-    // Critical initialization error
+    debugPrint("Critical initialization error: $e");
   }
   
   runApp(

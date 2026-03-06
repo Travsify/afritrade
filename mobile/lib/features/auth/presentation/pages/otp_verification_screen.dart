@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:afritrad_mobile/core/theme/app_colors.dart';
@@ -49,37 +50,53 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
   Future<void> _verifyPhoneNumber() async {
     setState(() => _isLoading = true);
-    await _auth.verifyPhoneNumber(
-      phoneNumber: widget.phone,
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        // Auto-resolution on Android
-        if (credential.smsCode != null) {
-          for (int i = 0; i < 6 && i < credential.smsCode!.length; i++) {
-            _controllers[i].text = credential.smsCode![i];
+    try {
+      // Check if Firebase is initialized
+      if (Firebase.apps.isEmpty) {
+        throw Exception("Firebase not initialized");
+      }
+
+      await _auth.verifyPhoneNumber(
+        phoneNumber: widget.phone,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          if (credential.smsCode != null) {
+            for (int i = 0; i < 6 && i < credential.smsCode!.length; i++) {
+              _controllers[i].text = credential.smsCode![i];
+            }
           }
-        }
-        try {
-          final userCredential = await _auth.signInWithCredential(credential);
-          await _finalizeVerification(userCredential.user?.uid);
-        } catch (e) {
+          try {
+            final userCredential = await _auth.signInWithCredential(credential);
+            await _finalizeVerification(userCredential.user?.uid);
+          } catch (e) {
+            debugPrint("Auto-verification sign-in failed: $e");
+            if (mounted) setState(() => _isLoading = false);
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          debugPrint("Firebase verification failed: ${e.code} - ${e.message}");
+          _showError("SMS Service Unavailable: ${e.message}");
           if (mounted) setState(() => _isLoading = false);
-        }
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        _showError(e.message ?? "Verification failed");
-        setState(() => _isLoading = false);
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        setState(() {
-          _verificationId = verificationId;
-          _isLoading = false;
-        });
-        _showCodeSentSnackbar();
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        _verificationId = verificationId;
-      },
-    );
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (mounted) {
+            setState(() {
+              _verificationId = verificationId;
+              _isLoading = false;
+            });
+            _showCodeSentSnackbar();
+          }
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          if (mounted) {
+            setState(() => _verificationId = verificationId);
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint("Phone verification setup failed: $e");
+      _showError("Initialization error. Please try again later.");
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _showCodeSentSnackbar() {
