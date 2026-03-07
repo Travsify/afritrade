@@ -13,6 +13,7 @@ class AppApiConfig {
   static const String kycStatus = '$baseUrl/kyc_status';
   static const String kycVerify = '$baseUrl/kyc/verify';
   static const String kycVerifyBusiness = '$baseUrl/kyc/verify-business';
+  static const String kycVerifyDocument = '$baseUrl/kyc/verify-document';
   static const String kycUpload = '$baseUrl/kyc/upload';
 
   // Transactions

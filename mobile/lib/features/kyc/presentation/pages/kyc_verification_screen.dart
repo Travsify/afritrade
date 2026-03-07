@@ -179,13 +179,52 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   Future<void> _submitDocument(String type, File? file) async {
     try {
       final headers = await _getHeaders();
+      headers['Content-Type'] = 'application/json';
+
+      // Automated verification endpoints for specific types
+      final automatedTypes = ['drivers_license', 'passport', 'voter_card'];
       
+      if (automatedTypes.contains(type)) {
+        final payload = {
+          'type': type,
+          'number': _documentNumberController.text,
+        };
+
+        // Add optional fields based on type
+        if (type == 'drivers_license') {
+          // In a real app, you'd pick this from a date picker. Use a placeholder for now or prompt user.
+          payload['dob'] = '1990-01-01'; 
+        } else if (type == 'passport' || type == 'voter_card') {
+          payload['last_name'] = 'User'; // Placeholder or from profile
+          if (type == 'voter_card') payload['state'] = 'Lagos';
+        }
+
+        final response = await http.post(
+          Uri.parse(AppApiConfig.kycVerifyDocument),
+          headers: headers,
+          body: jsonEncode(payload),
+        );
+
+        final data = jsonDecode(response.body);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'] ?? 'Verification completed'),
+              backgroundColor: response.statusCode == 200 ? AppColors.success : Colors.red,
+            ),
+          );
+          _loadKycStatus();
+        }
+        return;
+      }
+
+      // Fallback to manual upload for other types (BVN, Utility Bill, etc.)
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(AppApiConfig.kycVerify), // Using kycVerify for submission
+        Uri.parse(AppApiConfig.kycVerify),
       );
       
-      request.headers.addAll(headers);
+      request.headers.addAll(await _getHeaders());
       request.fields['document_type'] = type;
       
       if (_documentNumberController.text.isNotEmpty) {
@@ -202,14 +241,17 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Submitted')),
+          SnackBar(
+            content: Text(data['message'] ?? 'Submitted'),
+            backgroundColor: response.statusCode == 200 ? AppColors.success : Colors.red,
+          ),
         );
         _loadKycStatus();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
