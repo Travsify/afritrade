@@ -110,8 +110,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::get('/tax_reports', [\App\Http\Controllers\Api\TaxReportApiController::class, 'index']);
     Route::post('/tax_reports/generate', [\App\Http\Controllers\Api\TaxReportApiController::class, 'generate']);
 
-    // ─── PIN-Protected Financial Routes ───
-    Route::middleware('verify.pin')->group(function () {
+    // ─── PIN-Protected Financial Routes (Tiered Limits Applied) ───
+    Route::middleware(['verify.pin', 'limit'])->group(function () {
         Route::post('/transfer/send', [\App\Http\Controllers\Api\TransferApiController::class, 'transfer']);
         Route::post('/payment/supplier', [\App\Http\Controllers\Api\TransferApiController::class, 'paySupplier']);
         Route::post('/withdraw', [\App\Http\Controllers\Api\WithdrawalApiController::class, 'withdraw']);
