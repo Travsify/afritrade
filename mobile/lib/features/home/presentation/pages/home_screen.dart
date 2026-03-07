@@ -18,6 +18,7 @@ import 'package:afritrad_mobile/features/accounts/presentation/pages/accounts_sc
 import 'package:afritrad_mobile/features/swap/presentation/pages/swap_screen.dart';
 import 'package:afritrad_mobile/features/profile/presentation/pages/profile_screen.dart';
 import 'package:afritrad_mobile/features/referral/presentation/pages/referral_screen.dart';
+import 'package:afritrad_mobile/features/support/presentation/pages/support_chat_screen.dart';
 // Productivity Tools
 import 'package:afritrad_mobile/features/tools/presentation/pages/bulk_payment_screen.dart';
 import 'package:afritrad_mobile/features/tools/presentation/pages/tax_report_screen.dart';
@@ -369,6 +370,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
         Row(
           children: [
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SupportChatScreen()),
+                );
+              },
+              icon: Icon(Icons.support_agent_rounded, color: Colors.white),
+            ),
             IconButton(
               onPressed: () => _showNotifications(),
               icon: Icon(Iconsax.notification, color: Colors.white),

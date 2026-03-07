@@ -15,7 +15,7 @@ import '../../../auth/data/kyc_provider.dart';
 import '../../../auth/presentation/pages/kyb_registration_screen.dart';
 import '../../../settings/presentation/pages/security_settings_screen.dart';
 import 'transaction_pin_screen.dart';
-import '../../../support/presentation/pages/support_assistant_screen.dart';
+import '../../../support/presentation/pages/support_chat_screen.dart';
 import '../../../settings/presentation/pages/about_afritrade_screen.dart';
 import '../../../settings/presentation/pages/legal_document_screen.dart';
 
@@ -726,7 +726,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => SupportAssistantScreen()),
+              MaterialPageRoute(builder: (context) => const SupportChatScreen()),
             );
           },
         ),
