@@ -20,12 +20,30 @@ class _PaySupplierScreenState extends State<PaySupplierScreen> {
   final _anchorService = AnchorService();
   String _selectedCurrency = 'USD';
   bool isProcessingPayment = false;
+  bool _isLoadingRate = false;
   double _exchangeRate = 1.0; // Default pending dynamic rates
 
   @override
   void initState() {
     super.initState();
     _amountController.addListener(() => setState(() {}));
+    _fetchExchangeRate();
+  }
+
+  Future<void> _fetchExchangeRate() async {
+    setState(() => _isLoadingRate = true);
+    try {
+      final rate = await _anchorService.getExchangeRate(_selectedCurrency, 'NGN');
+      if (mounted) {
+        setState(() {
+          _exchangeRate = rate;
+          _isLoadingRate = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Rate fetch error: $e');
+      if (mounted) setState(() => _isLoadingRate = false);
+    }
   }
 
   @override
@@ -34,24 +52,6 @@ class _PaySupplierScreenState extends State<PaySupplierScreen> {
     _recipientController.dispose();
     _bankController.dispose();
     super.dispose();
-  }
-
-  void _updateExchangeRate() {
-    // Mock rates for now based on current market trends
-    switch (_selectedCurrency) {
-      case 'CNY':
-        _exchangeRate = 215.0;
-        break;
-      case 'EUR':
-        _exchangeRate = 1650.0;
-        break;
-      case 'GBP':
-        _exchangeRate = 1950.0;
-        break;
-      default:
-        _exchangeRate = 1550.0; // USD
-    }
-    setState(() {});
   }
 
   void _processPayment() {
@@ -242,8 +242,8 @@ class _PaySupplierScreenState extends State<PaySupplierScreen> {
                       onChanged: (val) {
                         setState(() {
                           _selectedCurrency = val!;
-                          _updateExchangeRate();
                         });
+                        _fetchExchangeRate();
                       },
                     ),
                   ),
@@ -268,7 +268,9 @@ class _PaySupplierScreenState extends State<PaySupplierScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Rate: 1 $_selectedCurrency = ₦${_exchangeRate.toStringAsFixed(2)}",
+                  _isLoadingRate
+                    ? "Fetching live rate..."
+                    : "Rate: 1 $_selectedCurrency = ₦${_exchangeRate.toStringAsFixed(2)}",
                   style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12),
                 ),
                 if (_amountController.text.isNotEmpty)
