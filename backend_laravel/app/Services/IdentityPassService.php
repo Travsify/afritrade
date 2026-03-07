@@ -50,6 +50,40 @@ class IdentityPassService
         ]);
     }
 
+    /**
+     * Verify Driver's License
+     */
+    public function verifyDriversLicense($number, $dob)
+    {
+        return $this->processRequest('/identitypass/verification/dl', [
+            'number' => $number,
+            'dob' => $dob,
+        ]);
+    }
+
+    /**
+     * Verify International Passport
+     */
+    public function verifyPassport($number, $lastName)
+    {
+        return $this->processRequest('/identitypass/verification/passport', [
+            'number' => $number,
+            'last_name' => $lastName,
+        ]);
+    }
+
+    /**
+     * Verify Voter's Card
+     */
+    public function verifyVotersCard($number, $state, $lastName)
+    {
+        return $this->processRequest('/identitypass/verification/voter_card', [
+            'number' => $number,
+            'state' => $state,
+            'last_name' => $lastName,
+        ]);
+    }
+
     private function processRequest($endpoint, $payload)
     {
         try {

@@ -110,6 +110,54 @@ class KycApiController extends Controller
         ]);
     }
 
+    public function verifyDocument(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|string|in:drivers_license,passport,voter_card',
+            'number' => 'required|string',
+            'dob' => 'required_if:type,drivers_license|date',
+            'last_name' => 'required_if:type,passport,voter_card|string',
+            'state' => 'required_if:type,voter_card|string',
+        ]);
+
+        $type = $request->type;
+        $result = ['status' => 'error', 'message' => 'Invalid document type'];
+
+        if ($type === 'drivers_license') {
+            $result = $this->identityPass->verifyDriversLicense($request->number, $request->dob);
+        } elseif ($type === 'passport') {
+            $result = $this->identityPass->verifyPassport($request->number, $request->last_name);
+        } elseif ($type === 'voter_card') {
+            $result = $this->identityPass->verifyVotersCard($request->number, $request->state, $request->last_name);
+        }
+
+        if ($result['status'] === 'success') {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $user->kyc_tier = 2; // Identity Document Tier
+            $user->verification_status = 'verified';
+            $user->save();
+
+            // Track Document
+            $user->kycDocuments()->create([
+                'doc_type' => $type,
+                'document_number' => $request->number,
+                'status' => 'approved',
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Document Verification Successful',
+                'data' => $result['data']
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => $result['message'] ?? 'Verification failed'
+        ], 400);
+    }
+
     private function getRequiredForNextTier($currentTier)
     {
         switch ($currentTier) {

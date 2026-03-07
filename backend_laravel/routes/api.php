@@ -35,6 +35,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::get('/kyc_status', [\App\Http\Controllers\Api\KycApiController::class, 'status']);
     Route::post('/kyc/verify', [\App\Http\Controllers\Api\KycApiController::class, 'verifyIdentity']);
     Route::post('/kyc/verify-business', [\App\Http\Controllers\Api\KycApiController::class, 'verifyBusiness']);
+    Route::post('/kyc/verify-document', [\App\Http\Controllers\Api\KycApiController::class, 'verifyDocument']);
 
     // Chat
     Route::post('/support_chat', [\App\Http\Controllers\Api\ChatApiController::class, 'handle']);
