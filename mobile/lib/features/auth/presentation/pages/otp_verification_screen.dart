@@ -323,15 +323,16 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
   Widget _buildOTPField(int index) {
     return Container(
-      width: 45,
-      height: 70,
+      width: 42,
+      height: 65,
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.surfaceLight, // Brighter surface for better contrast
+        borderRadius: BorderRadius.circular(15),
         border: Border.all(
           color: _controllers[index].text.isNotEmpty
-              ? AppColors.primary.withOpacity(0.5)
-              : AppColors.glassBorder,
+              ? AppColors.primary
+              : Colors.white.withOpacity(0.3), // Much brighter default border
+          width: 2,
         ),
       ),
       child: Center(
@@ -343,7 +344,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           maxLength: 1,
           style: GoogleFonts.outfit(
             color: Colors.white,
-            fontSize: 32,
+            fontSize: 28, // Slightly smaller font to fit better
             fontWeight: FontWeight.bold,
           ),
           decoration: const InputDecoration(
