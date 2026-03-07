@@ -28,7 +28,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   String _selectedCountry = "Nigeria";
 
   final List<String> _countries = [
-    "Nigeria", "South Africa", "Kenya", "Ghana", "Rwanda", "Uganda", "Cameroon", "Côte d'Ivoire"
+    "Nigeria",
+    "South Africa",
+    "Kenya",
+    "Ghana",
+    "Rwanda",
+    "Uganda",
+    "Cameroon",
+    "Côte d'Ivoire",
   ];
 
   bool _isLoading = false;
@@ -36,27 +43,27 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   void _nextStep() {
     if (_currentStep == 1) {
-       // Validate name & country
-       if (_nameController.text.isEmpty) {
-          _showError("Full Name is required");
-          return;
-       }
-       setState(() => _currentStep = 2);
+      // Validate name & country
+      if (_nameController.text.isEmpty) {
+        _showError("Full Name is required");
+        return;
+      }
+      setState(() => _currentStep = 2);
     } else if (_currentStep == 2) {
-       // Validate business name
-       if (_businessController.text.isEmpty) {
-          _showError("Business Name is required");
-          return;
-       }
-       setState(() => _currentStep = 3);
+      // Validate business name
+      if (_businessController.text.isEmpty) {
+        _showError("Business Name is required");
+        return;
+      }
+      setState(() => _currentStep = 3);
     }
   }
 
   void _prevStep() {
     if (_currentStep > 1) {
-       setState(() => _currentStep--);
+      setState(() => _currentStep--);
     } else {
-       Navigator.pop(context);
+      Navigator.pop(context);
     }
   }
 
@@ -85,10 +92,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
 
     setState(() => _isLoading = true);
-    
+
     try {
       final formattedPhone = _formatPhone(_phoneController.text);
-      
+
       final response = await http.post(
         Uri.parse(AppApiConfig.register),
         body: jsonEncode({
@@ -103,32 +110,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       );
 
       final data = jsonDecode(response.body);
-      
+
       if (response.statusCode == 200 && data['status'] == 'success') {
-         if (mounted) {
-            final user = data['user'];
-            final prefs = await SharedPreferences.getInstance();
-            
-            // Save User ID & Token
-            await prefs.setString('user_id', user['id'].toString());
-            await prefs.setString('user_name', user['name'] ?? "");
-            await prefs.setString('user_email', user['email']);
-            
-            // Save Sanctum Token if provided
-            if (data['token'] != null) {
-              await prefs.setString('auth_token', data['token']);
-            }
-            
-            await prefs.setBool('is_logged_in', true);
-            
-            // Notify provider (using AuthWrapper logic)
-            // Note: AuthWrapper will pick up the logged in state on rebuild
-            
-             Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const AuthWrapper()),
-            );
-         }
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  OTPVerificationScreen(email: _emailController.text.trim()),
+            ),
+          );
+        }
       } else {
         _showError(data['message'] ?? 'Registration failed');
       }
@@ -160,7 +152,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.glassBorder),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
           ),
           onPressed: _prevStep,
         ),
@@ -182,11 +178,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                                border: Border.all(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                ),
                               ),
                               child: Text(
                                 "STEP $_currentStep/4",
@@ -244,7 +245,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           ),
                         ],
                         if (_currentStep == 3) ...[
-                           _buildInputField(
+                          _buildInputField(
                             controller: _emailController,
                             label: "Email Address",
                             hint: "name@example.com",
@@ -277,7 +278,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 16),
+                              Icon(
+                                Icons.info_outline_rounded,
+                                color: AppColors.primary,
+                                size: 16,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -296,7 +301,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           width: double.infinity,
                           height: 60,
                           child: ElevatedButton(
-                            onPressed: _isLoading ? null : (_currentStep < 3 ? _nextStep : _register),
+                            onPressed: _isLoading
+                                ? null
+                                : (_currentStep < 3 ? _nextStep : _register),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
@@ -318,14 +325,19 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        _currentStep < 3 ? "Continue" : "Create Account",
+                                        _currentStep < 3
+                                            ? "Continue"
+                                            : "Create Account",
                                         style: GoogleFonts.outfit(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      const Icon(Icons.arrow_forward_rounded, size: 20),
+                                      const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 20,
+                                      ),
                                     ],
                                   ),
                           ),
@@ -335,17 +347,28 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           child: RichText(
                             textAlign: TextAlign.center,
                             text: TextSpan(
-                              style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
+                              style: GoogleFonts.outfit(
+                                color: AppColors.textSecondary,
+                                fontSize: 13,
+                              ),
                               children: [
-                                const TextSpan(text: "By continuing, you agree to our "),
+                                const TextSpan(
+                                  text: "By continuing, you agree to our ",
+                                ),
                                 TextSpan(
                                   text: "Terms of Service",
-                                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 const TextSpan(text: " and "),
                                 TextSpan(
                                   text: "Privacy Policy",
-                                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
@@ -416,12 +439,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 style: GoogleFonts.outfit(color: Colors.white, fontSize: 16),
                 decoration: InputDecoration(
                   hintText: hint,
-                  hintStyle: GoogleFonts.outfit(color: AppColors.textMuted, fontSize: 15),
+                  hintStyle: GoogleFonts.outfit(
+                    color: AppColors.textMuted,
+                    fontSize: 15,
+                  ),
                   prefixIcon: Icon(icon, color: AppColors.textMuted, size: 22),
                   suffixIcon: isPassword
                       ? IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                            _obscurePassword
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
                             color: AppColors.textMuted,
                             size: 20,
                           ),
@@ -433,7 +461,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         )
                       : null,
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                 ),
               ),
             ),
@@ -442,6 +473,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ],
     );
   }
+
   Widget _buildCountryPicker() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,7 +498,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             child: DropdownButton<String>(
               value: _selectedCountry,
               dropdownColor: AppColors.surface,
-              icon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted),
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.textMuted,
+              ),
               isExpanded: true,
               style: GoogleFonts.outfit(color: Colors.white, fontSize: 16),
               items: _countries.map((String country) {
@@ -489,4 +524,3 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 }
-

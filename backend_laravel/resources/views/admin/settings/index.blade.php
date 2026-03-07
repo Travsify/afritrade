@@ -84,6 +84,45 @@
                         </div>
                     </div>
 
+                    <!-- SMTP / Email Configuration -->
+                    <div class="mt-8 border-t pt-6 text-left">
+                        <h4 class="font-bold text-gray-800 mb-4 border-b pb-1">SMTP Email Configuration (For Internal OTPs & Alerts)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-xs font-bold mb-1">Mail Mailer</label>
+                                <input type="text" name="mail_mailer" value="{{ $settings['mail_mailer'] ?? 'smtp' }}" class="w-full px-3 py-2 text-sm border rounded" placeholder="e.g. smtp, log, array">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-xs font-bold mb-1">Mail Host</label>
+                                <input type="text" name="mail_host" value="{{ $settings['mail_host'] ?? '' }}" class="w-full px-3 py-2 text-sm border rounded" placeholder="smtp.mailtrap.io">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-xs font-bold mb-1">Mail Port</label>
+                                <input type="number" name="mail_port" value="{{ $settings['mail_port'] ?? '2525' }}" class="w-full px-3 py-2 text-sm border rounded" placeholder="2525, 465, 587">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-xs font-bold mb-1">Mail Username</label>
+                                <input type="text" name="mail_username" value="{{ $settings['mail_username'] ?? '' }}" class="w-full px-3 py-2 text-sm border rounded">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-xs font-bold mb-1">Mail Password</label>
+                                <input type="password" name="mail_password" value="{{ $settings['mail_password'] ?? '' }}" class="w-full px-3 py-2 text-sm border rounded">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-xs font-bold mb-1">Mail Encryption</label>
+                                <input type="text" name="mail_encryption" value="{{ $settings['mail_encryption'] ?? 'tls' }}" class="w-full px-3 py-2 text-sm border rounded" placeholder="tls / ssl">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-xs font-bold mb-1">Mail From Address</label>
+                                <input type="email" name="mail_from_address" value="{{ $settings['mail_from_address'] ?? 'noreply@afritrad.com' }}" class="w-full px-3 py-2 text-sm border rounded">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-xs font-bold mb-1">Mail From Name</label>
+                                <input type="text" name="mail_from_name" value="{{ $settings['mail_from_name'] ?? 'Afritrad' }}" class="w-full px-3 py-2 text-sm border rounded">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
                          <!-- Anchor (Legacy/Fallback) -->
                          <div class="bg-gray-50 p-4 rounded-lg border">

@@ -1,13 +1,9 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:afritrad_mobile/core/theme/app_colors.dart';
-import 'package:afritrad_mobile/features/auth/presentation/pages/identity_info_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,83 +14,47 @@ import 'auth_wrapper.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
-  final String phone;
-  final String password;
 
-  const OTPVerificationScreen({
-    super.key,
-    required this.email,
-    required this.phone,
-    required this.password,
-  });
+  const OTPVerificationScreen({super.key, required this.email});
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
 }
 
 class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
-  final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
-  String? _verificationId;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isLoading = false;
-  int _counter = 60;
-  Timer? _timer;
-
   @override
   void initState() {
     super.initState();
     _startTimer();
-    _verifyPhoneNumber();
+    // We assume the backend already sent the first OTP during registration.
   }
 
-  Future<void> _verifyPhoneNumber() async {
+  Future<void> _resendOTP() async {
     setState(() => _isLoading = true);
-    try {
-      // Check if Firebase is initialized
-      if (Firebase.apps.isEmpty) {
-        throw Exception("Firebase not initialized");
-      }
 
-      await _auth.verifyPhoneNumber(
-        phoneNumber: widget.phone,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          if (credential.smsCode != null) {
-            for (int i = 0; i < 6 && i < credential.smsCode!.length; i++) {
-              _controllers[i].text = credential.smsCode![i];
-            }
-          }
-          try {
-            final userCredential = await _auth.signInWithCredential(credential);
-            await _finalizeVerification(userCredential.user?.uid);
-          } catch (e) {
-            debugPrint("Auto-verification sign-in failed: $e");
-            if (mounted) setState(() => _isLoading = false);
-          }
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          debugPrint("Firebase verification failed: ${e.code} - ${e.message}");
-          _showError("SMS Service Unavailable: ${e.message}");
-          if (mounted) setState(() => _isLoading = false);
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          if (mounted) {
-            setState(() {
-              _verificationId = verificationId;
-              _isLoading = false;
-            });
-            _showCodeSentSnackbar();
-          }
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          if (mounted) {
-            setState(() => _verificationId = verificationId);
-          }
-        },
+    try {
+      final response = await http.post(
+        Uri.parse(AppApiConfig.baseUrl + "/resend-otp"),
+        body: jsonEncode({'email': widget.email}),
+        headers: AppApiConfig.getHeaders(null),
       );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['status'] == 'success') {
+        _showCodeSentSnackbar();
+        _startTimer();
+      } else {
+        _showError(data['message'] ?? "Failed to resend code");
+      }
     } catch (e) {
-      debugPrint("Phone verification setup failed: $e");
-      _showError("Initialization error. Please try again later.");
+      _showError("Connection error. Please check your internet and try again.");
+    } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -102,7 +62,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   void _showCodeSentSnackbar() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Verification code sent to ${widget.phone}"),
+        content: Text("Verification code sent to ${widget.email}"),
         backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
       ),
@@ -132,68 +92,55 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
   Future<void> _verifyOTP() async {
     String otp = _controllers.map((e) => e.text).join();
-    if (otp.length < 6 || _verificationId == null) return;
+    if (otp.length < 6) return;
 
     setState(() => _isLoading = true);
 
     try {
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: otp,
-      );
-
-      final userCredential = await _auth.signInWithCredential(credential);
-      await _finalizeVerification(userCredential.user?.uid);
-    } catch (e) {
-      _showError("Invalid code. Please try again.");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _finalizeVerification(String? firebaseUid) async {
-    if (firebaseUid == null) return;
-    
-    try {
       final response = await http.post(
         Uri.parse(AppApiConfig.baseUrl + "/verify-otp"),
-        body: jsonEncode({
-          'email': widget.email,
-          'firebase_uid': firebaseUid,
-        }),
+        body: jsonEncode({'email': widget.email, 'otp_code': otp}),
         headers: AppApiConfig.getHeaders(null),
       );
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['status'] == 'success') {
-         final prefs = await SharedPreferences.getInstance();
-         final user = data['user'];
-         
-         await prefs.setString('user_id', user['id'].toString());
-         await prefs.setString('user_name', user['name'] ?? "");
-         await prefs.setString('user_email', user['email']);
-         if (data['token'] != null) {
-            await prefs.setString('auth_token', data['token']);
-         }
-         await prefs.setBool('is_logged_in', true);
+        final prefs = await SharedPreferences.getInstance();
+        final user = data['user'];
 
-         if (mounted) {
-            await context.read<KYCProvider>().setLoggedIn(true);
-            
-            if (mounted) {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const AuthWrapper()),
-                (route) => false,
-              );
-            }
-         }
+        await prefs.setString('user_id', user['id'].toString());
+        await prefs.setString('user_name', user['name'] ?? "");
+        await prefs.setString('user_email', user['email']);
+        if (data['token'] != null) {
+          await prefs.setString('auth_token', data['token']);
+        }
+        await prefs.setBool('is_logged_in', true);
+
+        if (mounted) {
+          await context.read<KYCProvider>().setLoggedIn(true);
+
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AuthWrapper()),
+              (route) => false,
+            );
+          }
+        }
       } else {
         _showError(data['message'] ?? "Verification failed");
+
+        // Clear fields on error so user can retype easily
+        for (var controller in _controllers) {
+          controller.clear();
+        }
+        _focusNodes[0].requestFocus();
       }
     } catch (e) {
-      _showError("Connection error syncing with server.");
+      _showError("Connection error verifying code.");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -218,7 +165,11 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.glassBorder),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -238,11 +189,16 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.blue.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3),
+                            ),
                           ),
                           child: Text(
                             "STEP 4/4",
@@ -255,7 +211,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          "Verify Phone Number",
+                          "Verify Email Address",
                           style: GoogleFonts.outfit(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -265,7 +221,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "We've sent a 6-digit code to\n${widget.phone}",
+                          "We've sent a 6-digit code to\n${widget.email}",
                           style: GoogleFonts.outfit(
                             fontSize: 16,
                             color: AppColors.textSecondary,
@@ -275,18 +231,21 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                     ),
                   ),
                   const SizedBox(height: 60),
-                  
+
                   // OTP Input Fields
                   FadeInUp(
                     delay: const Duration(milliseconds: 200),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(6, (index) => _buildOTPField(index)),
+                      children: List.generate(
+                        6,
+                        (index) => _buildOTPField(index),
+                      ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 48),
-                  
+
                   FadeInUp(
                     delay: const Duration(milliseconds: 400),
                     child: Column(
@@ -328,20 +287,25 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                             children: [
                               Text(
                                 "Didn't receive the code?",
-                                style: GoogleFonts.outfit(color: AppColors.textSecondary),
+                                style: GoogleFonts.outfit(
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                               const SizedBox(height: 8),
                               GestureDetector(
-                                onTap: _counter == 0 ? () {
-                                  _startTimer();
-                                  _verifyPhoneNumber();
-                                } : null,
+                                onTap: _counter == 0
+                                    ? () {
+                                        _resendOTP();
+                                      }
+                                    : null,
                                 child: Text(
-                                  _counter > 0 
+                                  _counter > 0
                                       ? "Resend code in ${_counter}s"
                                       : "Resend Code",
                                   style: GoogleFonts.outfit(
-                                    color: _counter == 0 ? AppColors.primary : AppColors.textMuted,
+                                    color: _counter == 0
+                                        ? AppColors.primary
+                                        : AppColors.textMuted,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -369,9 +333,9 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _controllers[index].text.isNotEmpty 
-              ? AppColors.primary.withOpacity(0.5) 
-              : AppColors.glassBorder
+          color: _controllers[index].text.isNotEmpty
+              ? AppColors.primary.withOpacity(0.5)
+              : AppColors.glassBorder,
         ),
       ),
       child: Center(

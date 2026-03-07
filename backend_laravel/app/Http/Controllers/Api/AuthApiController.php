@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SendOtpMail;
+use Carbon\Carbon;
 
 class AuthApiController extends Controller
 {
@@ -31,7 +34,8 @@ class AuthApiController extends Controller
             ]);
         }
 
-        $otp = rand(1000, 9999);
+        $otp = rand(100000, 999999);
+        $expiresAt = Carbon::now()->addMinutes(15);
 
         try {
             $user = User::create([
@@ -41,9 +45,9 @@ class AuthApiController extends Controller
                 'password' => Hash::make($request->password),
                 'country' => $request->country,
                 'business_name' => $request->business_name,
-                'otp_code' => null,
-                'otp_expires_at' => null,
-                'is_otp_verified' => true,
+                'otp_code' => $otp,
+                'otp_expires_at' => $expiresAt,
+                'is_otp_verified' => false,
                 'kyb_status' => 'none',
             ]);
 
@@ -57,12 +61,17 @@ class AuthApiController extends Controller
 
             Log::info("Successful registration for User ID: {$user->id}, Email: {$user->email}");
             
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // Send OTP Email
+            try {
+                Mail::to($user->email)->send(new SendOtpMail($otp, $user->name));
+            } catch (\Exception $e) {
+                Log::error("Failed to send OTP email to {$user->email}: " . $e->getMessage());
+                // Still return success, but maybe prompt them to resend
+            }
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Account created successfully.',
-                'token' => $token,
+                'message' => 'Account created successfully. Please check your email for the verification code.',
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -83,7 +92,7 @@ class AuthApiController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'firebase_uid' => 'required|string',
+            'otp_code' => 'required|string|min:6|max:6',
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -95,11 +104,30 @@ class AuthApiController extends Controller
             ], 404);
         }
 
-        // In a real production app, we would verify the Firebase ID Token using 
-        // the Firebase Admin SDK. For now, we trust the UID sent by the verified app.
+        if ($user->is_otp_verified) {
+             return response()->json([
+                'status' => 'error',
+                'message' => 'Account is already verified'
+            ], 400);
+        }
+
+        // Verify OTP and Expiration
+        if ($user->otp_code !== $request->otp_code) {
+             return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid verification code'
+            ], 400);
+        }
+
+        if (Carbon::now()->isAfter($user->otp_expires_at)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Verification code has expired. Please request a new one.'
+            ], 400);
+        }
+
         $user->update([
             'is_otp_verified' => true,
-            'firebase_uid' => $request->firebase_uid,
             'otp_code' => null,
             'otp_expires_at' => null,
         ]);
@@ -108,7 +136,7 @@ class AuthApiController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'OTP verified successfully',
+            'message' => 'Email verified successfully',
             'token' => $token,
             'user' => [
                 'id' => $user->id,
@@ -119,6 +147,52 @@ class AuthApiController extends Controller
         ]);
     }
 
+    public function resendOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+             return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        if ($user->is_otp_verified) {
+             return response()->json([
+                'status' => 'error',
+                'message' => 'Account is already verified'
+            ], 400);
+        }
+
+        $otp = rand(100000, 999999);
+        $expiresAt = Carbon::now()->addMinutes(15);
+
+        $user->update([
+            'otp_code' => $otp,
+            'otp_expires_at' => $expiresAt,
+        ]);
+
+        try {
+            Mail::to($user->email)->send(new SendOtpMail($otp, $user->name));
+        } catch (\Exception $e) {
+            Log::error("Failed to resend OTP email to {$user->email}: " . $e->getMessage());
+             return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to send email. Please try again later.'
+            ], 500);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'A new verification code has been sent to your email.'
+        ]);
+    }
+
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
@@ -126,31 +200,30 @@ class AuthApiController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // Enforce OTP on every login as requested
+            $otp = rand(100000, 999999);
+            $expiresAt = Carbon::now()->addMinutes(15);
+            
+            $user->update([
+                'otp_code' => $otp,
+                'otp_expires_at' => $expiresAt,
+                'is_otp_verified' => false,
+            ]);
 
-            // Send login security alert
             try {
-                $notifService = app(NotificationService::class);
-                $notifService->loginAlert($user->id, $request->ip());
+                Mail::to($user->email)->send(new SendOtpMail($otp, $user->name));
             } catch (\Exception $e) {
-                Log::debug('Login alert failed: ' . $e->getMessage());
+                Log::error("Failed to send OTP email during login to {$user->email}: " . $e->getMessage());
             }
 
+            // Return 403 to trigger OTP verification screen on mobile
             return response()->json([
-                'status' => 'success',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => 'user',
-                    'country' => $user->country,
-                    'business_name' => $user->business_name,
-                    'is_verified' => $user->is_kyc_verified || ($user->verification_status === 'verified'),
-                    'kyb_status' => $user->kyb_status,
-                    'has_pin' => !empty($user->transaction_pin),
-                ],
-                'token' => $token
-            ]);
+                'status' => 'error',
+                'message' => 'OTP verification required to continue',
+                'requires_otp' => true,
+                'email' => $user->email,
+                'phone' => $user->phone
+            ], 403);
         }
 
         return response()->json([

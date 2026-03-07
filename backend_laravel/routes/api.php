@@ -8,6 +8,7 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/register', [\App\Http\Controllers\Api\AuthApiController::class, 'register']);
     Route::post('/login', [\App\Http\Controllers\Api\AuthApiController::class, 'login']);
     Route::post('/verify-otp', [\App\Http\Controllers\Api\AuthApiController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [\App\Http\Controllers\Api\AuthApiController::class, 'resendOtp']);
 });
 
 Route::get('/banners', [\App\Http\Controllers\Api\GeneralApiController::class, 'banners']);

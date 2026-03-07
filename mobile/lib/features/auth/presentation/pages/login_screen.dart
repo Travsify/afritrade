@@ -63,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final response = await http.post(
         Uri.parse(AppApiConfig.login),
@@ -75,43 +75,39 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       final data = jsonDecode(response.body);
-      
-      if (response.statusCode == 200 && data['status'] == 'success') {
-         if (mounted) {
-            // Save User ID & Token
-            final user = data['user'];
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('user_id', user['id'].toString());
-            await prefs.setString('user_name', user['name']);
-            await prefs.setString('user_email', user['email']);
-            
-            // Save Sanctum Token
-            if (data['token'] != null) {
-              await prefs.setString('auth_token', data['token']);
-            }
-            
-            await prefs.setBool('is_logged_in', true);
 
-            context.read<KYCProvider>().setLoggedIn(true);
-            
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const AuthWrapper()),
-            );
-         }
+      if (response.statusCode == 200 && data['status'] == 'success') {
+        if (mounted) {
+          // Save User ID & Token
+          final user = data['user'];
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_id', user['id'].toString());
+          await prefs.setString('user_name', user['name']);
+          await prefs.setString('user_email', user['email']);
+
+          // Save Sanctum Token
+          if (data['token'] != null) {
+            await prefs.setString('auth_token', data['token']);
+          }
+
+          await prefs.setBool('is_logged_in', true);
+
+          context.read<KYCProvider>().setLoggedIn(true);
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AuthWrapper()),
+          );
+        }
       } else if (response.statusCode == 403 && data['requires_otp'] == true) {
-         if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => OTPVerificationScreen(
-                  email: data['email'],
-                  phone: data['phone'] ?? "",
-                  password: _passwordController.text.trim(),
-                ),
-              ),
-            );
-         }
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OTPVerificationScreen(email: data['email']),
+            ),
+          );
+        }
       } else {
         _showError(data['message'] ?? 'Login failed');
       }
@@ -136,10 +132,13 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           // Background decorative elements
           _buildBackgroundDecoration(),
-          
+
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 20,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -154,8 +153,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: AppColors.glowShadow(AppColors.primary),
                         ),
-                        child: const Icon(Icons.auto_awesome_rounded,
-                            color: Colors.white, size: 40),
+                        child: const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: Colors.white,
+                          size: 40,
+                        ),
                       ),
                     ),
                   ),
@@ -187,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 56),
-                  
+
                   FadeInUp(
                     delay: const Duration(milliseconds: 400),
                     child: Column(
@@ -213,7 +215,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ForgotPasswordScreen(),
+                                ),
                               );
                             },
                             child: Text(
@@ -226,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 40),
-                        
+
                         // Sign In Button
                         SizedBox(
                           width: double.infinity,
@@ -261,26 +266,38 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      const Icon(Icons.arrow_forward_rounded, size: 20),
+                                      const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 20,
+                                      ),
                                     ],
                                   ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Biometric Login (Placeholder for seamless feel)
                         Row(
                           children: [
-                            const Expanded(child: Divider(color: Colors.white10)),
+                            const Expanded(
+                              child: Divider(color: Colors.white10),
+                            ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: Text(
                                 "Or sign in with",
-                                style: GoogleFonts.outfit(color: AppColors.textMuted, fontSize: 13),
+                                style: GoogleFonts.outfit(
+                                  color: AppColors.textMuted,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
-                            const Expanded(child: Divider(color: Colors.white10)),
+                            const Expanded(
+                              child: Divider(color: Colors.white10),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -292,30 +309,38 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppColors.glassBorder),
+                                border: Border.all(
+                                  color: AppColors.glassBorder,
+                                ),
                               ),
-                              child: Icon(Icons.fingerprint_rounded, 
-                                  color: AppColors.success, size: 36),
+                              child: Icon(
+                                Icons.fingerprint_rounded,
+                                color: AppColors.success,
+                                size: 36,
+                              ),
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 48),
-                        
+
                         // Registration link
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               "New to Afritrade? ",
-                              style: GoogleFonts.outfit(color: AppColors.textSecondary),
+                              style: GoogleFonts.outfit(
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const RegistrationScreen(),
+                                    builder: (context) =>
+                                        const RegistrationScreen(),
                                   ),
                                 );
                               },
@@ -408,12 +433,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: GoogleFonts.outfit(color: Colors.white, fontSize: 16),
                 decoration: InputDecoration(
                   hintText: hint,
-                  hintStyle: GoogleFonts.outfit(color: AppColors.textMuted, fontSize: 15),
+                  hintStyle: GoogleFonts.outfit(
+                    color: AppColors.textMuted,
+                    fontSize: 15,
+                  ),
                   prefixIcon: Icon(icon, color: AppColors.textMuted, size: 22),
                   suffixIcon: isPassword
                       ? IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                            _obscurePassword
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
                             color: AppColors.textMuted,
                             size: 20,
                           ),
@@ -425,7 +455,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         )
                       : null,
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                 ),
               ),
             ),
@@ -435,4 +468,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
