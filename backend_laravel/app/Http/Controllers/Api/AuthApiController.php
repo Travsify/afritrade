@@ -33,32 +33,50 @@ class AuthApiController extends Controller
 
         $otp = rand(1000, 9999);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-            'country' => $request->country,
-            'business_name' => $request->business_name,
-            'otp_code' => null,
-            'otp_expires_at' => null,
-            'is_otp_verified' => true,
-            'kyb_status' => 'none',
-        ]);
+        try {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
+                'country' => $request->country,
+                'business_name' => $request->business_name,
+                'otp_code' => null,
+                'otp_expires_at' => null,
+                'is_otp_verified' => true,
+                'kyb_status' => 'none',
+            ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+            if (!$user) {
+                Log::error("User creation failed for email: {$request->email}");
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Account creation failed internally.'
+                ], 500);
+            }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Account created successfully.',
-            'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'is_verified' => false
-            ]
-        ]);
+            Log::info("Successful registration for User ID: {$user->id}, Email: {$user->email}");
+            
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Account created successfully.',
+                'token' => $token,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'is_verified' => false
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Registration Exception for {$request->email}: " . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Database persistence error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function verifyOtp(Request $request)
