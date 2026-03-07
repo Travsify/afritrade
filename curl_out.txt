@@ -1,0 +1,5 @@
+FULL Register Response:
+{"status":"success","message":"Account created successfully. Please check your email for the verification code.","user":{"id":20,"name":"Automated Test","email":"tester_1772921534@example.com","is_verified":false}}
+
+FULL Resend OTP Response:
+{"status":"error","message":"Failed to send email. Please try again later."}

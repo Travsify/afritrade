@@ -254,7 +254,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                     ? "Typically replies instantly" 
                     : (_sessionStatus == 'pending_human' ? "Waiting for agent..." : "Online"),
                   style: GoogleFonts.outfit(
-                    color: AppColors.textSelected,
+                    color: AppColors.textSecondary,
                     fontSize: 12,
                   ),
                 ),
@@ -307,7 +307,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                         children: [
                           ActionChip(
                             label: Text("Speak to human", style: GoogleFonts.outfit(color: Colors.white)),
-                            backgroundColor: AppColors.surfaceHighlight,
+                            backgroundColor: AppColors.surfaceLight,
                             side: const BorderSide(color: Colors.white12),
                             onPressed: _requestHandover,
                           ),
@@ -326,7 +326,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    border: const BorderSide(color: Colors.white10),
+                    border: Border(top: BorderSide(color: Colors.white10)),
                   ),
                   child: Row(
                     children: [
@@ -382,7 +382,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isUser ? AppColors.primary : AppColors.surfaceHighlight,
+          color: isUser ? AppColors.primary : AppColors.surfaceLight,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),

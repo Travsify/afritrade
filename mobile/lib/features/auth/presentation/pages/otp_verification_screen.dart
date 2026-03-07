@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -27,6 +26,11 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     (_) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  
+  bool _isLoading = false;
+  int _counter = 60;
+  Timer? _timer;
+
   @override
   void initState() {
     super.initState();
@@ -184,10 +188,9 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  FadeInDown(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -229,27 +232,21 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         ),
                       ],
                     ),
-                  ),
                   const SizedBox(height: 60),
 
                   // OTP Input Fields
-                  FadeInUp(
-                    delay: const Duration(milliseconds: 200),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(
-                        6,
-                        (index) => _buildOTPField(index),
-                      ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(
+                      6,
+                      (index) => _buildOTPField(index),
                     ),
                   ),
 
                   const SizedBox(height: 48),
 
-                  FadeInUp(
-                    delay: const Duration(milliseconds: 400),
-                    child: Column(
-                      children: [
+                  Column(
+                    children: [
                         SizedBox(
                           width: double.infinity,
                           height: 60,
@@ -315,7 +312,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         ),
                       ],
                     ),
-                  ),
                 ],
               ),
             ),
@@ -327,7 +323,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
   Widget _buildOTPField(int index) {
     return Container(
-      width: 50,
+      width: 45,
       height: 70,
       decoration: BoxDecoration(
         color: AppColors.surface,

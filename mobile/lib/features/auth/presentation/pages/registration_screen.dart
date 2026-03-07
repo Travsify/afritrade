@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:afritrad_mobile/features/auth/presentation/pages/auth_wrapper.dart'; // For navigation
+import 'package:afritrad_mobile/features/auth/presentation/pages/otp_verification_screen.dart';
 
 import '../../../../core/constants/api_config.dart';
 import '../../../../core/theme/app_colors.dart';

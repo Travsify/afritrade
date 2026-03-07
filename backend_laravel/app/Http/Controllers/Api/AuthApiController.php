@@ -183,7 +183,7 @@ class AuthApiController extends Controller
             Log::error("Failed to resend OTP email to {$user->email}: " . $e->getMessage());
              return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to send email. Please try again later.'
+                'message' => 'Failed to send email: ' . $e->getMessage()
             ], 500);
         }
 
