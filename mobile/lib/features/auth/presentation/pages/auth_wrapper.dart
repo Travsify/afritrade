@@ -5,6 +5,7 @@ import 'login_screen.dart';
 import '../../data/kyc_provider.dart';
 import 'kyc_required_screen.dart';
 import '../../../home/presentation/pages/home_screen.dart';
+import '../../../../core/widgets/biometric_lock_screen.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -13,13 +14,32 @@ class AuthWrapper extends StatefulWidget {
   State<AuthWrapper> createState() => _AuthWrapperState();
 }
 
-class _AuthWrapperState extends State<AuthWrapper> {
+class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   late Future<void> _initializationTimeout;
+  bool _isLocked = false;
 
   @override
   void initState() {
     super.initState();
     _initializationTimeout = Future.delayed(const Duration(seconds: 5));
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // App going to background — mark as locked if biometrics are enabled
+      final kycProvider = context.read<KYCProvider>();
+      if (kycProvider.isLoggedIn && kycProvider.biometricsEnabled) {
+        setState(() => _isLocked = true);
+      }
+    }
   }
 
   @override
@@ -42,9 +62,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (!kycProvider.isLoggedIn) {
           return const LoginScreen();
         }
+
+        // Show biometric lock screen when returning from background
+        if (_isLocked) {
+          return BiometricLockScreen(
+            onUnlocked: () => setState(() => _isLocked = false),
+          );
+        }
         
         return const HomeScreen();
       },
     );
   }
 }
+

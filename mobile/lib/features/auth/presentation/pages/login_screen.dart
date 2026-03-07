@@ -10,6 +10,7 @@ import 'package:afritrad_mobile/features/auth/presentation/pages/auth_wrapper.da
 import '../../data/kyc_provider.dart';
 import '../../../../core/constants/api_config.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/services/security_service.dart';
 import 'package:provider/provider.dart';
 import 'registration_screen.dart';
 import 'forgot_password_screen.dart';
@@ -25,8 +26,40 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _securityService = SecurityService();
   bool _isLoading = false;
   bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _attemptBiometricLogin();
+  }
+
+  Future<void> _attemptBiometricLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasLoggedInBefore = prefs.getString('user_email') != null;
+    final biometricsEnabled = prefs.getBool('biometrics_enabled') ?? false;
+
+    if (!hasLoggedInBefore || !biometricsEnabled) return;
+
+    final canBio = await _securityService.canCheckBiometrics();
+    if (!canBio) return;
+
+    final success = await _securityService.authenticateBiometrics();
+    if (success && mounted) {
+      // Biometric verified — auto-login with stored session
+      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+      final token = prefs.getString('auth_token');
+      if (isLoggedIn && token != null) {
+        context.read<KYCProvider>().setLoggedIn(true);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+        );
+      }
+    }
+  }
 
   Future<void> _login() async {
     setState(() => _isLoading = true);
@@ -253,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 24),
                         Center(
                           child: GestureDetector(
-                            onTap: () {},
+                            onTap: () => _attemptBiometricLogin(),
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(

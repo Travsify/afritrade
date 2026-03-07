@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/services/security_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/data/kyc_provider.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -15,7 +17,6 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   final _securityService = SecurityService();
   bool _isPinSet = false;
   bool _canBiometric = false;
-  bool _biometricEnabled = true;
   bool _isLoading = true;
 
   @override
@@ -91,16 +92,18 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 if (_canBiometric)
                   FadeInUp(
                     delay: const Duration(milliseconds: 100),
-                    child: _buildSecurityTile(
-                      icon: Icons.fingerprint,
-                      title: "Biometric Auth",
-                      subtitle: "Use FaceID or Fingerprint",
-                      trailing: Switch(
-                        value: _biometricEnabled,
-                        onChanged: (v) => setState(() => _biometricEnabled = v),
-                        activeColor: AppColors.primary,
+                    child: Consumer<KYCProvider>(
+                      builder: (context, kycProvider, _) => _buildSecurityTile(
+                        icon: Icons.fingerprint,
+                        title: "Biometric Auth",
+                        subtitle: "Use FaceID or Fingerprint",
+                        trailing: Switch(
+                          value: kycProvider.biometricsEnabled,
+                          onChanged: (v) => kycProvider.toggleBiometrics(v),
+                          activeColor: AppColors.primary,
+                        ),
+                        onTap: () {},
                       ),
-                      onTap: () {},
                     ),
                   ),
                 const SizedBox(height: 32),
