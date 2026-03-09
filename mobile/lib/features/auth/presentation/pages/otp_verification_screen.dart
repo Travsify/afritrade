@@ -13,8 +13,9 @@ import 'auth_wrapper.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
+  final String? initialOtp;
 
-  const OTPVerificationScreen({super.key, required this.email});
+  const OTPVerificationScreen({super.key, required this.email, this.initialOtp});
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -30,10 +31,12 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   bool _isLoading = false;
   int _counter = 60;
   Timer? _timer;
+  String? _displayOtp;
 
   @override
   void initState() {
     super.initState();
+    _displayOtp = widget.initialOtp;
     _startTimer();
     // We assume the backend already sent the first OTP during registration.
   }
@@ -51,6 +54,9 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['status'] == 'success') {
+        setState(() {
+          _displayOtp = data['otp_code']?.toString();
+        });
         _showCodeSentSnackbar();
         _startTimer();
       } else {
@@ -230,6 +236,33 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                             color: AppColors.textSecondary,
                           ),
                         ),
+                        if (_displayOtp != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    "TESTING ONLY: Your code is $_displayOtp",
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   const SizedBox(height: 60),

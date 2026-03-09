@@ -117,8 +117,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  OTPVerificationScreen(email: _emailController.text.trim()),
+              builder: (context) => OTPVerificationScreen(
+                email: _emailController.text.trim(),
+                initialOtp: data['otp_code']?.toString(),
+              ),
             ),
           );
         }

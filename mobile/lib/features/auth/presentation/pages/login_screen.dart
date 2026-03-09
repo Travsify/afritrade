@@ -104,7 +104,10 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OTPVerificationScreen(email: data['email']),
+              builder: (context) => OTPVerificationScreen(
+                email: data['email'],
+                initialOtp: data['otp_code']?.toString(),
+              ),
             ),
           );
         }
