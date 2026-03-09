@@ -72,6 +72,7 @@ class AuthApiController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Account created successfully. Please check your email for the verification code.',
+                'otp_code' => $otp, // Added for testing
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -189,7 +190,8 @@ class AuthApiController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'A new verification code has been sent to your email.'
+            'message' => 'A new verification code has been sent to your email.',
+            'otp_code' => $otp // Added for testing
         ]);
     }
 
@@ -222,6 +224,7 @@ class AuthApiController extends Controller
                 'message' => 'OTP verification required to continue',
                 'requires_otp' => true,
                 'email' => $user->email,
+                'otp_code' => $otp,
                 'phone' => $user->phone
             ], 403);
         }
